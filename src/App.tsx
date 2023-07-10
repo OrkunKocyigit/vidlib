@@ -8,11 +8,11 @@ function App() {
         ScanFile("C:\\Projects\\vidlib\\test").then(response => {
             setResult(response.response)
         })
-    })
+    }, [])
     return (
-        <div>
-            { JSON.stringify(result) }
-        </div>
+        <pre>
+            { JSON.stringify(result, null, 2) }
+        </pre>
     );
 }
 

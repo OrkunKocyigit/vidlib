@@ -1,6 +1,6 @@
 import {ServiceResponse} from "./ServiceResponse";
-import {FolderInfo} from "./FolderInfo";
-import {VideoFile} from "./VideoFile";
+import {FolderInfo} from "../entities/FolderInfo";
+import {VideoFile} from "../entities/VideoFile";
 import {invoke} from "@tauri-apps/api";
 
 export interface ScanFileResult {

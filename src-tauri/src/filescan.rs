@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-use walkdir::{WalkDir};
+use std::fs::{read_dir, ReadDir};
+use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize)]
 pub struct VideoFile {
@@ -9,9 +9,60 @@ pub struct VideoFile {
 
 #[derive(Deserialize, Serialize)]
 pub struct FolderInfo {
-    pub path: PathBuf,
-    pub folders: Vec<FolderInfo>,
-    pub videos: Vec<VideoFile>,
+    path: PathBuf,
+    folders: Vec<FolderInfo>,
+    videos: Vec<VideoFile>,
+}
+
+impl FolderInfo {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            path: path.as_ref().to_owned(),
+            folders: Vec::new(),
+            videos: Vec::new(),
+        }
+    }
+
+    pub fn push_folder(&mut self, folder: FolderInfo) {
+        self.folders.push(folder);
+    }
+
+    pub fn push_video(&mut self, video: VideoFile) {
+        self.videos.push(video);
+    }
+
+    pub fn read_folder(&mut self) {
+        // Read all files
+        self.read_files(read_dir(&self.path).unwrap());
+        // Read directories
+        self.read_directories(read_dir(&self.path).unwrap());
+    }
+
+    fn read_files(&mut self, files: ReadDir) {
+        for entry in files {
+            let path = match entry {
+                Ok(entry) => entry.path(),
+                Err(_) => continue,
+            };
+            if path.is_file() {
+                self.push_video(VideoFile { path })
+            }
+        }
+    }
+
+    fn read_directories(&mut self, files: ReadDir) {
+        for entry in files {
+            let path = match entry {
+                Ok(entry) => entry.path(),
+                Err(_) => continue,
+            };
+            if path.is_dir() {
+                let mut folder = FolderInfo::new(path);
+                folder.read_folder();
+                self.push_folder(folder);
+            }
+        }
+    }
 }
 
 pub struct FileScan {
@@ -21,39 +72,18 @@ pub struct FileScan {
 impl FileScan {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path: path.as_ref().to_path_buf()
+            path: path.as_ref().to_path_buf(),
         }
     }
 
     pub async fn run(&self) -> Result<FolderInfo, &str> {
         let is_dir = &self.path.is_dir();
         if !is_dir {
-            return Err("Invalid path")
+            return Err("Invalid path");
         }
 
-        let mut root = FolderInfo {
-            path: PathBuf::from(&*self.path.to_path_buf()),
-            folders: Vec::new(),
-            videos: Vec::new(),
-        };
-
-        let walker = WalkDir::new(&self.path).follow_links(true);
-        for entry in walker {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_file() {
-                root.videos.push(VideoFile {
-                    path: path.to_path_buf()
-                })
-            }
-            if path.is_dir() {
-                root.folders.push(FolderInfo {
-                    path: path.to_path_buf(),
-                    folders: Vec::new(),
-                    videos: Vec::new(),
-                })
-            }
-        }
+        let mut root = FolderInfo::new(&self.path);
+        root.read_folder();
 
         Ok(root)
     }
