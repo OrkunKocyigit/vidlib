@@ -3,6 +3,7 @@ import {FolderInfo} from "../../../entities/FolderInfo";
 import {ActionIcon, Navbar} from "@mantine/core";
 import {SearchBar} from "../../../components/SearchBar";
 import {Plus} from "tabler-icons-react";
+import FileTreeView from "./FileTreeView";
 
 type Props = {
     folders: FolderInfo[]
@@ -12,7 +13,7 @@ type State = {
 
 }
 class SideBar extends React.Component<Props, State> {
-    constructor(props: FolderInfo) {
+    constructor(props: Props) {
         super(props);
     }
 
@@ -27,7 +28,7 @@ class SideBar extends React.Component<Props, State> {
                     </SearchBar>
                 </Navbar.Section>
                 <Navbar.Section grow>
-                    {JSON.stringify(this.props.folders, null, 4)}
+                    <FileTreeView folders={this.props.folders}></FileTreeView>
                 </Navbar.Section>
             </Navbar>
         )
