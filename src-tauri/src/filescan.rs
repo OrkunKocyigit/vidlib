@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fs::{read_dir, ReadDir};
+use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize)]
@@ -32,31 +32,15 @@ impl FolderInfo {
     }
 
     pub fn read_folder(&mut self) {
-        // Read all files
-        self.read_files(read_dir(&self.path).unwrap());
-        // Read directories
-        self.read_directories(read_dir(&self.path).unwrap());
-    }
-
-    fn read_files(&mut self, files: ReadDir) {
-        for entry in files {
+        let dir = read_dir(&self.path).unwrap();
+        for entry in dir {
             let path = match entry {
                 Ok(entry) => entry.path(),
                 Err(_) => continue,
             };
             if path.is_file() {
                 self.push_video(VideoFile { path })
-            }
-        }
-    }
-
-    fn read_directories(&mut self, files: ReadDir) {
-        for entry in files {
-            let path = match entry {
-                Ok(entry) => entry.path(),
-                Err(_) => continue,
-            };
-            if path.is_dir() {
+            } else if path.is_dir() {
                 let mut folder = FolderInfo::new(path);
                 folder.read_folder();
                 self.push_folder(folder);
