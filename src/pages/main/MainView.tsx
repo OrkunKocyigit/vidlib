@@ -25,7 +25,7 @@ class MainView extends React.Component<Props, State> {
             const {response: folderInfo} = response
             if (folderInfo) {
                 this.setState(prevState => ({
-                    folders: [...prevState.folders, folderInfo]
+                    folders: [folderInfo]
                 }))
             }
         })

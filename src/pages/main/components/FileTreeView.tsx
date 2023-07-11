@@ -1,13 +1,17 @@
 import {FolderInfo} from "../../../entities/FolderInfo";
+import FolderInfoView from "./FolderInfoView";
+import React from "react"
 
 type Props = {
     folders: FolderInfo[]
 }
 
-export default function FileTreeView(props: Props) {
+function FileTreeView(props: Props) {
     return (
-        <pre>
-            {JSON.stringify(props.folders, null, 4)}
-        </pre>
+        <div>
+            {props.folders.map(folder => <FolderInfoView folder={folder} key={folder.path}></FolderInfoView>)}
+        </div>
     )
 }
+
+export default FileTreeView

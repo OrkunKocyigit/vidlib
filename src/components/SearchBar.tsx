@@ -1,4 +1,4 @@
-import {Box, Group, rem, TextInput, useMantineColorScheme} from "@mantine/core";
+import {Box, Group, rem, TextInput} from "@mantine/core";
 import {Search} from "tabler-icons-react";
 import {ReactNode} from "react";
 
