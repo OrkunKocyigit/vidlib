@@ -1,9 +1,11 @@
-import react from "react"
 import {Box, Group, rem, TextInput, useMantineColorScheme} from "@mantine/core";
 import {Search} from "tabler-icons-react";
-export function SearchBar() {
-    const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+import {ReactNode} from "react";
 
+type Props = {
+    children: ReactNode
+}
+export function SearchBar({children}: Props) {
     return (
         <Box sx={(theme) => ({
             paddingTop: theme.spacing.xs,
@@ -14,8 +16,9 @@ export function SearchBar() {
                 theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
             }`
         })}>
-            <Group position="apart">
+            <Group>
                 <TextInput placeholder="Filename" icon={<Search size="1rem"></Search>}></TextInput>
+                {children}
             </Group>
         </Box>
     )
