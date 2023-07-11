@@ -1,18 +1,19 @@
 import "./App.css";
-import {useEffect, useState} from "react";
-import {ScanFile, ScanFileResult} from "./service/ScanFile";
+import React, {useState} from "react";
+import MainView from "./pages/main/MainView";
+import {ColorScheme, ColorSchemeProvider, MantineProvider} from "@mantine/core";
 
 function App() {
-    let [result, setResult] = useState<ScanFileResult>()
-    useEffect(() => {
-        ScanFile("C:\\Projects\\vidlib\\test").then(response => {
-            setResult(response.response)
-        })
-    }, [])
+    const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
+    const toggleColorScheme = (value?: ColorScheme) =>
+        setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+
     return (
-        <pre>
-            { JSON.stringify(result, null, 2) }
-        </pre>
+        <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+            <MantineProvider withGlobalStyles withNormalizeCSS>
+                <MainView></MainView>
+            </MantineProvider>
+        </ColorSchemeProvider>
     );
 }
 
