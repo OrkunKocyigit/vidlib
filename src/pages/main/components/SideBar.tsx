@@ -17,7 +17,9 @@ class SideBar extends React.Component<Props, State> {
 
     render() {
         return (
-            <Navbar>
+            <Navbar width={{
+                base: 250
+            }}>
                 <Navbar.Section>
                     <SearchBar></SearchBar>
                 </Navbar.Section>
