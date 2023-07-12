@@ -36,7 +36,7 @@ function FolderInfoView(props: Props): JSX.Element | null {
         <Group>
           {renderToggleIcon(props.folder, false)}
           {renderFolderIcon(props.folder, false)}
-          <Text>{props.folder.name}</Text>
+          <Text>{props.folder.displayName}</Text>
         </Group>
       </UnstyledButton>
       <Collapse in={opened}>

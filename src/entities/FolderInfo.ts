@@ -1,9 +1,31 @@
-import { type VideoFile } from './VideoFile';
+import { IVideoFile, VideoFile } from './VideoFile';
+import { FileInfo, IFileInfo } from './FileInfo';
 
-export interface FolderInfo {
-  path: string;
+export interface IFolderInfo extends IFileInfo {
+  folders: IFolderInfo[];
+  videos: IVideoFile[];
+  empty: boolean;
+}
+
+export class FolderInfo extends FileInfo implements IFolderInfo {
+  empty: boolean;
   folders: FolderInfo[];
   videos: VideoFile[];
-  empty: boolean;
-  name: string;
+
+  constructor(
+    depth: number,
+    name: string,
+    path: string,
+    empty: boolean,
+    folders: IFolderInfo[],
+    videos: IVideoFile[]
+  ) {
+    super(depth, name, path);
+    this.empty = empty;
+    this.folders = folders.map(
+      ({ depth, name, path, empty, folders, videos }) =>
+        new FolderInfo(depth, name, path, empty, folders, videos)
+    );
+    this.videos = videos.map(({ depth, name, path }) => new VideoFile(depth, name, path));
+  }
 }

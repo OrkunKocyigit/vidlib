@@ -6,15 +6,17 @@ use std::path::{Path, PathBuf};
 pub struct VideoFile {
     path: PathBuf,
     name: String,
+    depth: usize,
 }
 
 impl VideoFile {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P, depth: usize) -> Self {
         let path_ref = path.as_ref().to_owned();
         let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
         Self {
             path: path_ref,
             name,
+            depth,
         }
     }
 }
@@ -26,10 +28,11 @@ pub struct FolderInfo {
     videos: Vec<VideoFile>,
     name: String,
     empty: bool,
+    depth: usize,
 }
 
 impl FolderInfo {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P, depth: usize) -> Self {
         let path_ref = path.as_ref().to_owned();
         let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
         Self {
@@ -38,6 +41,7 @@ impl FolderInfo {
             videos: Vec::new(),
             name,
             empty: true,
+            depth,
         }
     }
 
@@ -57,10 +61,10 @@ impl FolderInfo {
                 Err(_) => continue,
             };
             if path.is_file() {
-                self.push_video(VideoFile::new(path));
+                self.push_video(VideoFile::new(path, self.depth));
                 self.empty = false;
             } else if path.is_dir() {
-                let mut folder = FolderInfo::new(path);
+                let mut folder = FolderInfo::new(path, self.depth + 1);
                 folder.read_folder();
                 self.push_folder(folder);
             }
@@ -85,7 +89,7 @@ impl FileScan {
             return Err("Invalid path");
         }
 
-        let mut root = FolderInfo::new(&self.path);
+        let mut root = FolderInfo::new(&self.path, 0);
         root.read_folder();
 
         Ok(root)
