@@ -1,7 +1,7 @@
-import {ServiceResponse} from "./ServiceResponse";
-import {FolderInfo} from "../entities/FolderInfo";
-import {invoke} from "@tauri-apps/api";
+import { type ServiceResponse } from './ServiceResponse';
+import { type FolderInfo } from '../entities/FolderInfo';
+import { invoke } from '@tauri-apps/api';
 
-export function ScanFile(path: string): Promise<ServiceResponse<FolderInfo>> {
-    return invoke("file_scan", {path: path})
+export async function ScanFile(path: string): Promise<ServiceResponse<FolderInfo>> {
+  return await invoke('file_scan', { path });
 }

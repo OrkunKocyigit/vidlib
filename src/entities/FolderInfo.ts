@@ -1,9 +1,9 @@
-import {VideoFile} from "./VideoFile";
+import { type VideoFile } from './VideoFile';
 
 export interface FolderInfo {
-    path: string,
-    folders: FolderInfo[],
-    videos: VideoFile[],
-    empty: boolean,
-    name: string
+  path: string;
+  folders: FolderInfo[];
+  videos: VideoFile[];
+  empty: boolean;
+  name: string;
 }

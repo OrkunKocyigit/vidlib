@@ -1,13 +1,11 @@
-import React from "react"
-import {VideoFile} from "../../../entities/VideoFile";
+import React from 'react';
+import { type VideoFile } from '../../../entities/VideoFile';
 
-type Props = {
-    video: VideoFile
+interface Props {
+  video: VideoFile;
 }
-function VideoFileView(props: Props) {
-    return (
-        <div>{props.video.name}</div>
-    )
+function VideoFileView(props: Props): JSX.Element {
+  return <div>{props.video.name}</div>;
 }
 
-export default VideoFileView
+export default VideoFileView;

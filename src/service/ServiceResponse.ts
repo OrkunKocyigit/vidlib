@@ -1,10 +1,10 @@
 export enum ResponseType {
-    SUCCESS,
-    FAILURE
+  SUCCESS,
+  FAILURE
 }
 
 export interface ServiceResponse<T> {
-    result: ResponseType,
-    response?: T,
-    error?: string
+  result: ResponseType;
+  response?: T;
+  error?: string;
 }
