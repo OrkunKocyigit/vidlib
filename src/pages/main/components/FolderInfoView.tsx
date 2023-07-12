@@ -30,7 +30,7 @@ function FolderInfoView(props: Props) {
             <UnstyledButton>
                 <Group>
                     {renderFolderIcon(props.folder, false)}
-                    <Text>{props.folder.path}</Text>
+                    <Text>{props.folder.name}</Text>
                 </Group>
             </UnstyledButton>
             <FileTreeView folders={props.folder.folders}></FileTreeView>

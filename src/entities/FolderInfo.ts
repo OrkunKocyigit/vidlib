@@ -4,5 +4,6 @@ export interface FolderInfo {
     path: string,
     folders: FolderInfo[],
     videos: VideoFile[],
-    empty: boolean
+    empty: boolean,
+    name: string
 }

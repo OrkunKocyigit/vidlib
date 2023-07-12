@@ -1,3 +1,4 @@
 export interface VideoFile {
-    path: string
+    path: string,
+    name: string
 }

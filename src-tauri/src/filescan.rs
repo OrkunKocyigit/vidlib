@@ -4,7 +4,19 @@ use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize)]
 pub struct VideoFile {
-    pub path: PathBuf,
+    path: PathBuf,
+    name: String,
+}
+
+impl VideoFile {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        let path_ref = path.as_ref().to_owned();
+        let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
+        Self {
+            path: path_ref,
+            name,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -12,15 +24,19 @@ pub struct FolderInfo {
     path: PathBuf,
     folders: Vec<FolderInfo>,
     videos: Vec<VideoFile>,
+    name: String,
     empty: bool,
 }
 
 impl FolderInfo {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        let path_ref = path.as_ref().to_owned();
+        let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
         Self {
-            path: path.as_ref().to_owned(),
+            path: path_ref,
             folders: Vec::new(),
             videos: Vec::new(),
+            name,
             empty: true,
         }
     }
@@ -41,7 +57,7 @@ impl FolderInfo {
                 Err(_) => continue,
             };
             if path.is_file() {
-                self.push_video(VideoFile { path });
+                self.push_video(VideoFile::new(path));
                 self.empty = false;
             } else if path.is_dir() {
                 let mut folder = FolderInfo::new(path);
