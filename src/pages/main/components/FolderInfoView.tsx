@@ -10,7 +10,7 @@ type Props = {
 function FolderInfoView(props: Props) {
     return (
         <div>
-            {JSON.stringify(props.folder.path, null, 4)}
+            {JSON.stringify(props.folder, null, 4)}
             <FileTreeView folders={props.folder.folders}></FileTreeView>
             {props.folder.videos.map(video => <VideoFileView video={video} key={video.path}/>)}
         </div>

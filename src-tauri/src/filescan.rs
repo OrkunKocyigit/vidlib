@@ -12,6 +12,7 @@ pub struct FolderInfo {
     path: PathBuf,
     folders: Vec<FolderInfo>,
     videos: Vec<VideoFile>,
+    empty: bool,
 }
 
 impl FolderInfo {
@@ -20,6 +21,7 @@ impl FolderInfo {
             path: path.as_ref().to_owned(),
             folders: Vec::new(),
             videos: Vec::new(),
+            empty: true,
         }
     }
 
@@ -39,7 +41,8 @@ impl FolderInfo {
                 Err(_) => continue,
             };
             if path.is_file() {
-                self.push_video(VideoFile { path })
+                self.push_video(VideoFile { path });
+                self.empty = false;
             } else if path.is_dir() {
                 let mut folder = FolderInfo::new(path);
                 folder.read_folder();
