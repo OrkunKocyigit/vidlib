@@ -1,6 +1,6 @@
 import {Box, Group, rem, TextInput} from "@mantine/core";
-import {Search} from "tabler-icons-react";
 import {ReactNode} from "react";
+import {IconSearch} from "@tabler/icons-react";
 
 type Props = {
     children: ReactNode
@@ -17,7 +17,7 @@ export function SearchBar({children}: Props) {
             }`
         })}>
             <Group>
-                <TextInput placeholder="Filename" icon={<Search size="1rem"></Search>}></TextInput>
+                <TextInput placeholder="Filename" icon={<IconSearch size="1rem"></IconSearch>}></TextInput>
                 {children}
             </Group>
         </Box>

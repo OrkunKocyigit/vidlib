@@ -6,7 +6,7 @@ type Props = {
 }
 function VideoFileView(props: Props) {
     return (
-        <div>{props.video.path}</div>
+        <div>{props.video.name}</div>
     )
 }
 

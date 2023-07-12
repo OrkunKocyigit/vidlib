@@ -2,26 +2,29 @@ import {FolderInfo} from "../../../entities/FolderInfo";
 import React from "react";
 import FileTreeView from "./FileTreeView";
 import VideoFileView from "./VideoFileView";
-import {ArrowDown, ArrowRight} from "tabler-icons-react";
-import {Group, Text, ThemeIcon, UnstyledButton} from "@mantine/core";
+import {Group, Text, UnstyledButton} from "@mantine/core";
+import {IconArrowDown, IconArrowRight, IconFolder, IconFolderOpen} from "@tabler/icons-react";
 
 type Props = {
     folder: FolderInfo
 }
 
-function renderFolderIcon(folder: FolderInfo, state: boolean) {
+function renderToggleIcon(folder: FolderInfo, state: boolean) {
     if (folder.empty) {
         return null
+    } else if (state) {
+        return <IconArrowDown></IconArrowDown>
+    } else {
+        return <IconArrowRight></IconArrowRight>
     }
-    return (
-        <ThemeIcon>
-            {state ?
-                <ArrowDown></ArrowDown>
-                :
-                <ArrowRight></ArrowRight>
-            }
-        </ThemeIcon>
-    )
+}
+
+function renderFolderIcon(folder: FolderInfo, state: boolean) {
+    if (folder.empty || state) {
+        return <IconFolderOpen></IconFolderOpen>
+    } else {
+        return <IconFolder></IconFolder>
+    }
 }
 
 function FolderInfoView(props: Props) {
@@ -29,6 +32,7 @@ function FolderInfoView(props: Props) {
         <div>
             <UnstyledButton>
                 <Group>
+                    {renderToggleIcon(props.folder, false)}
                     {renderFolderIcon(props.folder, false)}
                     <Text>{props.folder.name}</Text>
                 </Group>
