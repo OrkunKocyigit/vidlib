@@ -1,12 +1,12 @@
-import { FolderInfo, IFolderInfo } from '../entities/FolderInfo';
+import { FolderInfo, type IFolderInfo } from '../entities/FolderInfo';
 import { invoke } from '@tauri-apps/api';
-import { IServiceResponse, ServiceResponse } from './ServiceResponse';
+import { type IServiceResponse, ServiceResponse } from './ServiceResponse';
 
 export async function ScanFile(path: string): Promise<ServiceResponse<FolderInfo>> {
   return await invoke('file_scan', { path }).then((value) => {
     const { error, result, response } = value as IServiceResponse<IFolderInfo>;
-    if (error != undefined) {
-      throw error;
+    if (error !== undefined) {
+      throw new Error(error);
     }
     const { depth, name, path, empty, folders, videos } = response as IFolderInfo;
     return new ServiceResponse<FolderInfo>(

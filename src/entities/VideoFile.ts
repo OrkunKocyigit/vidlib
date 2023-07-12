@@ -1,4 +1,4 @@
-import { FileInfo, IFileInfo } from './FileInfo';
+import { FileInfo, type IFileInfo } from './FileInfo';
 
 export interface IVideoFile extends IFileInfo {}
 

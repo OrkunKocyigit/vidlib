@@ -1,5 +1,5 @@
-import { IVideoFile, VideoFile } from './VideoFile';
-import { FileInfo, IFileInfo } from './FileInfo';
+import { type IVideoFile, VideoFile } from './VideoFile';
+import { FileInfo, type IFileInfo } from './FileInfo';
 
 export interface IFolderInfo extends IFileInfo {
   folders: IFolderInfo[];
