@@ -2,8 +2,9 @@ import { type FolderInfo } from '../../../entities/FolderInfo';
 import React from 'react';
 import FileTreeView from './FileTreeView';
 import VideoFileView from './VideoFileView';
-import { Group, Text, UnstyledButton } from '@mantine/core';
+import { Collapse, Group, Text, UnstyledButton } from '@mantine/core';
 import { IconArrowDown, IconArrowRight, IconFolder, IconFolderOpen } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
 
 interface Props {
   folder: FolderInfo;
@@ -20,27 +21,30 @@ function renderToggleIcon(folder: FolderInfo, state: boolean): JSX.Element | nul
 }
 
 function renderFolderIcon(folder: FolderInfo, state: boolean): JSX.Element | null {
-  if (folder.empty || state) {
-    return <IconFolderOpen></IconFolderOpen>;
-  } else {
+  if (folder.empty || !state) {
     return <IconFolder></IconFolder>;
+  } else {
+    return <IconFolderOpen></IconFolderOpen>;
   }
 }
 
 function FolderInfoView(props: Props): JSX.Element | null {
+  const [opened, { toggle }] = useDisclosure(false);
   return (
     <div>
-      <UnstyledButton>
+      <UnstyledButton onClick={toggle}>
         <Group>
           {renderToggleIcon(props.folder, false)}
           {renderFolderIcon(props.folder, false)}
           <Text>{props.folder.name}</Text>
         </Group>
       </UnstyledButton>
-      <FileTreeView folders={props.folder.folders}></FileTreeView>
-      {props.folder.videos.map((video) => (
-        <VideoFileView video={video} key={video.path} />
-      ))}
+      <Collapse in={opened}>
+        <FileTreeView folders={props.folder.folders}></FileTreeView>
+        {props.folder.videos.map((video) => (
+          <VideoFileView video={video} key={video.path} />
+        ))}
+      </Collapse>
     </div>
   );
 }
