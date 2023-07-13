@@ -22,17 +22,17 @@ pub async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
 }
 
 pub fn select_folder() -> Result<Response<PathBuf>, ()> {
-    let path = FileDialog::new().show_open_single_dir();
+    let path = FileDialog::new().show_open_single_dir().unwrap();
     let response = match path {
-        Ok(path) => Response {
+        Some(path) => Response {
             result: ResponseType::SUCCESS,
-            response: Some(path.unwrap()),
+            response: Some(path),
             error: None,
         },
-        Err(error) => Response {
-            result: ResponseType::FAILURE,
+        None => Response {
+            result: ResponseType::CANCELED,
             response: None,
-            error: Some(error.to_string()),
+            error: None,
         },
     };
     Ok(response)

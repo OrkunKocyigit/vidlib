@@ -1,6 +1,7 @@
 export enum ResponseType {
-  SUCCESS,
-  FAILURE
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
+  CANCELED = 'CANCELED'
 }
 
 export interface IServiceResponse<T> {
