@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { type FolderInfo } from '../../entities/FolderInfo';
-import { AppShell } from '@mantine/core';
+import { AppShell, Modal } from '@mantine/core';
 import SideBar from './components/SideBar';
 import { ScanFile } from '../../service/ScanFile';
+import { useDisclosure } from '@mantine/hooks';
+import AddFolderWizard from '../addfolder/AddFolderWizard';
 
 function MainView(): JSX.Element {
   const [folders, setFolders] = useState<FolderInfo[]>([]);
+  const [wizardOpened, { open, close }] = useDisclosure(false);
 
   useEffect(() => {
     ScanFile('C:\\Projects\\vidlib\\test')
@@ -21,9 +24,14 @@ function MainView(): JSX.Element {
   }, []);
 
   return (
-    <AppShell padding="md" navbar={<SideBar folders={folders}></SideBar>}>
-      Video View
-    </AppShell>
+    <>
+      <AppShell padding="md" navbar={<SideBar folders={folders} openWizard={open}></SideBar>}>
+        Video View
+      </AppShell>
+      <Modal opened={wizardOpened} onClose={close} withCloseButton={false} centered>
+        <AddFolderWizard></AddFolderWizard>
+      </Modal>
+    </>
   );
 }
 

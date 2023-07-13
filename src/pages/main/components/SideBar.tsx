@@ -7,9 +7,10 @@ import { type FolderInfo } from '../../../entities/FolderInfo';
 
 interface Props {
   folders: FolderInfo[];
+  openWizard: () => void;
 }
 
-function SideBar({ folders }: Props): JSX.Element {
+function SideBar({ folders, openWizard }: Props): JSX.Element {
   return (
     <Navbar
       width={{
@@ -17,7 +18,7 @@ function SideBar({ folders }: Props): JSX.Element {
       }}>
       <Navbar.Section>
         <SearchBar>
-          <ActionIcon variant="default">
+          <ActionIcon variant="default" onClick={openWizard}>
             <IconPlus size="1rem" />
           </ActionIcon>
         </SearchBar>
