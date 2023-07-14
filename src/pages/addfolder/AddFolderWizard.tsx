@@ -1,15 +1,20 @@
 import { Button, Center, Stack } from '@mantine/core';
 import React, { useState } from 'react';
 import FolderInput from '../../components/FolderInput';
-import { ScanFile } from '../../service/ScanFile';
+import { type FolderInfo } from '../../entities/FolderInfo';
+import { AddFolder } from '../../service/AddFolder';
 
-function AddFolderWizard(): JSX.Element {
+export interface AddFolderWizardProps {
+  onFolderAdd: (folderInfo: FolderInfo) => void;
+}
+
+function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
   const [path, setPath] = useState<string>('');
 
   function scanFolder(): void {
-    ScanFile(path)
+    AddFolder(path)
       .then((value) => {
-        console.log(value);
+        props.onFolderAdd(value.response as FolderInfo);
       })
       .catch((error) => {
         console.error(error);

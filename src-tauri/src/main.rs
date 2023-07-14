@@ -2,9 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::path::PathBuf;
+use std::sync::mpsc;
 
-use tauri::async_runtime::block_on;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Error, Manager};
 
 use crate::database::load_database;
 use crate::filescan::FolderInfo;
@@ -28,24 +28,33 @@ fn select_folder() -> Result<Response<PathBuf>, ()> {
 }
 
 #[tauri::command]
-async fn get_folders(app_handle: AppHandle) -> Result<Response<Vec<FolderInfo>>, ()> {
-    let mut folders = Vec::new();
-    block_on(async {
+async fn get_folders(app_handle: AppHandle) -> Result<Response<Vec<FolderInfo>>, Error> {
+    let (tx, rx) = mpsc::channel();
+    tauri::async_runtime::spawn_blocking(move || {
         let state = app_handle.state::<AppState>();
         let db_guard = state.db.lock().unwrap();
         let db = db_guard.as_ref().unwrap();
-        folders = database::get_paths(&db).expect("Paths not found");
-    });
-    gui::get_folders(&folders).await
+        let paths = database::get_paths(&db).expect("Paths not found");
+        tx.send(paths).unwrap();
+    })
+    .await?;
+    let folders = rx.recv().unwrap();
+    let response = gui::get_folders(&folders).await;
+    if response.is_ok() {
+        Ok(response.unwrap())
+    } else {
+        Err(Error::AssetNotFound("error".to_string()))
+    }
 }
 
 #[tauri::command]
 async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<FolderInfo>, ()> {
-    block_on(async {
+    let path_clone = path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
         let state = app_handle.state::<AppState>();
         let db_guard = state.db.lock().unwrap();
         let db = db_guard.as_ref().unwrap();
-        database::add_path(db, &path).expect("Paths not found");
+        database::add_path(db, &path_clone).expect("Paths not found");
     });
     file_scan(path).await
 }
