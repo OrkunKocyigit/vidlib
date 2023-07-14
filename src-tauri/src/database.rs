@@ -1,5 +1,6 @@
-use rusqlite::{Connection, Error};
 use std::fs;
+
+use rusqlite::{Connection, Error};
 use tauri::AppHandle;
 
 pub fn load_database(app_handle: &AppHandle) -> Result<Connection, Error> {
@@ -29,4 +30,15 @@ fn upgrade_database(connection: &mut Connection, version: f32) -> Result<(), Err
         transaction.commit()?;
     }
     Ok(())
+}
+
+pub fn get_paths(connection: &Connection) -> Result<Vec<String>, Error> {
+    let mut query = connection.prepare("SELECT path FROM PATHS ORDER BY id")?;
+    let mut rows = query.query([])?;
+    let mut paths: Vec<String> = Vec::new();
+    while let Some(row) = rows.next()? {
+        let path = row.get("path")?;
+        paths.push(path);
+    }
+    Ok(paths)
 }

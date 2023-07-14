@@ -1,6 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::fs::read_dir;
 use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub struct VideoFile {

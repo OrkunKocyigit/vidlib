@@ -1,7 +1,10 @@
+use std::path::{Path, PathBuf};
+
+use native_dialog::FileDialog;
+use tauri::Manager;
+
 use crate::filescan::{FileScan, FolderInfo};
 use crate::service::{Response, ResponseType};
-use native_dialog::FileDialog;
-use std::path::{Path, PathBuf};
 
 pub async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
     let scan = FileScan::new(Path::new(path.as_str()));
@@ -36,4 +39,21 @@ pub fn select_folder() -> Result<Response<PathBuf>, ()> {
         },
     };
     Ok(response)
+}
+
+pub async fn get_folders(folders: &Vec<String>) -> Result<Response<Vec<FolderInfo>>, ()> {
+    let mut folder_infos = Vec::new();
+    for folder in folders.into_iter() {
+        let path = Path::new(&folder);
+        let scan = FileScan::new(path);
+        let folder_scan = scan.run().await;
+        if let Ok(folder_info) = folder_scan {
+            folder_infos.push(folder_info);
+        }
+    }
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(folder_infos),
+        error: None,
+    })
 }
