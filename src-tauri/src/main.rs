@@ -3,8 +3,8 @@
 
 use std::path::PathBuf;
 
-use tauri::{AppHandle, Manager};
 use tauri::async_runtime::block_on;
+use tauri::{AppHandle, Manager};
 
 use crate::database::load_database;
 use crate::filescan::FolderInfo;
@@ -39,6 +39,17 @@ async fn get_folders(app_handle: AppHandle) -> Result<Response<Vec<FolderInfo>>,
     gui::get_folders(&folders).await
 }
 
+#[tauri::command]
+async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<FolderInfo>, ()> {
+    block_on(async {
+        let state = app_handle.state::<AppState>();
+        let db_guard = state.db.lock().unwrap();
+        let db = db_guard.as_ref().unwrap();
+        database::add_path(db, &path).expect("Paths not found");
+    });
+    file_scan(path).await
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(AppState {
@@ -47,7 +58,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             file_scan,
             select_folder,
-            get_folders
+            get_folders,
+            add_folder
         ])
         .setup(|app| {
             let handle = app.handle();

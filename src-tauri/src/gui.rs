@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use native_dialog::FileDialog;
-use tauri::Manager;
 
 use crate::filescan::{FileScan, FolderInfo};
 use crate::service::{Response, ResponseType};

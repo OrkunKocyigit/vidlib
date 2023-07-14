@@ -1,6 +1,6 @@
 use std::fs;
 
-use rusqlite::{Connection, Error};
+use rusqlite::{named_params, Connection, Error};
 use tauri::AppHandle;
 
 pub fn load_database(app_handle: &AppHandle) -> Result<Connection, Error> {
@@ -20,7 +20,7 @@ fn upgrade_database(connection: &mut Connection, version: f32) -> Result<(), Err
     if version < 1.0 {
         let transaction = connection.transaction()?;
         let sql = "CREATE TABLE PATHS (
-        id Integer PRIMARY KEY,
+        id Integer PRIMARY KEY AUTOINCREMENT,
         path TEXT NOT NULL
         )";
         transaction
@@ -41,4 +41,10 @@ pub fn get_paths(connection: &Connection) -> Result<Vec<String>, Error> {
         paths.push(path);
     }
     Ok(paths)
+}
+
+pub fn add_path(connection: &Connection, path: &String) -> Result<(), Error> {
+    let mut query = connection.prepare("INSERT INTO PATHS(path) VALUES (@path)")?;
+    query.execute(named_params! {"@path":path})?;
+    Ok(())
 }
