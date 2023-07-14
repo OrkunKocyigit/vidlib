@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use crate::filescan::FolderInfo;
 use crate::service::Response;
 
+mod database;
 mod filescan;
 mod gui;
 mod service;
