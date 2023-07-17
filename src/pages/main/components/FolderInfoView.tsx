@@ -33,7 +33,7 @@ function FolderInfoView(props: Props): JSX.Element | null {
   return (
     <div>
       <UnstyledButton onClick={toggle}>
-        <Group>
+        <Group noWrap>
           {renderToggleIcon(props.folder, false)}
           {renderFolderIcon(props.folder, false)}
           <Text>{props.folder.displayName}</Text>

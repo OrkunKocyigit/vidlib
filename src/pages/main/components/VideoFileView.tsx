@@ -18,7 +18,7 @@ function VideoFileView(props: Props): JSX.Element {
 
   return (
     <UnstyledButton onClick={updateVideo}>
-      <Group>
+      <Group noWrap>
         <IconVideo></IconVideo>
         {props.video.displayName}
       </Group>
