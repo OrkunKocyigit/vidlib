@@ -17,9 +17,11 @@ export function SearchBar({ children }: Props): JSX.Element {
           theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]
         }`
       })}>
-      <Group>
-        <TextInput placeholder="Filename" icon={<IconSearch size="1rem"></IconSearch>}></TextInput>
-        {children}
+      <Group grow>
+        <TextInput
+          placeholder="Filename"
+          icon={<IconSearch size="1rem" stroke={1.5}></IconSearch>}
+          rightSection={children}></TextInput>
       </Group>
     </Box>
   );
