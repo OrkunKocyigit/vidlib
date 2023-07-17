@@ -3,6 +3,7 @@ use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
+use crate::video::is_video;
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
@@ -119,8 +120,10 @@ impl FolderInfo {
                 Err(_) => continue,
             };
             if path.is_file() {
-                self.push_video(VideoFile::new(path, self.depth));
-                self.empty = false;
+                if is_video(&path) {
+                    self.push_video(VideoFile::new(path, self.depth));
+                    self.empty = false;
+                }
             } else if path.is_dir() {
                 let mut folder = FolderInfo::new(path, self.depth + 1);
                 folder.read_folder();

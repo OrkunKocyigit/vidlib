@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use gstreamer::init;
 use std::path::PathBuf;
 use std::sync::mpsc;
 
@@ -16,6 +17,7 @@ mod filescan;
 mod gui;
 mod service;
 mod state;
+mod video;
 
 #[tauri::command]
 async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
@@ -60,6 +62,7 @@ async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<Fold
 }
 
 fn main() {
+    init().unwrap();
     tauri::Builder::default()
         .manage(AppState {
             db: Default::default(),
