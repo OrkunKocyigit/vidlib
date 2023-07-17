@@ -1,10 +1,16 @@
-use std::fs::read_dir;
+use std::fs::{read_dir, File};
+use std::hash::Hasher;
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use xxhash_rust::xxh3::Xxh3;
+
+const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
 
 #[derive(Deserialize, Serialize)]
 pub struct VideoFile {
+    id: String,
     path: PathBuf,
     name: String,
     depth: usize,
@@ -14,11 +20,62 @@ impl VideoFile {
     pub fn new<P: AsRef<Path>>(path: P, depth: usize) -> Self {
         let path_ref = path.as_ref().to_owned();
         let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
+        let hash = VideoFile::hash_file(&path_ref);
         Self {
+            id: hash,
             path: path_ref,
             name,
             depth,
         }
+    }
+
+    fn hash_file(path_ref: &PathBuf) -> String {
+        let file = File::open(path_ref).expect("Failed to open file");
+        let file_size = file.metadata().expect("Failed to get file metadata").len();
+        let mut reader = BufReader::new(file);
+        let mut hasher = Xxh3::new();
+        let mut buffer = [0; 1024];
+
+        if file_size > CHUNK_SIZE {
+            // Hash first CHUNK_SIZE bytes
+            let mut bytes_read: u64 = 0;
+            loop {
+                if bytes_read >= CHUNK_SIZE {
+                    break;
+                }
+                let count = reader.read(&mut buffer).expect("Failed to read data");
+                if count == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..count]);
+                bytes_read += count as u64;
+            }
+
+            // Seek to CHUNK_SIZE bytes from end of file
+            reader
+                .seek(SeekFrom::End(-(CHUNK_SIZE as i64)))
+                .expect("Failed to seek");
+
+            // Hash last CHUNK_SIZE bytes
+            loop {
+                let count = reader.read(&mut buffer).expect("Failed to read data");
+                if count == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..count]);
+            }
+        } else {
+            // Hash entire file
+            loop {
+                let count = reader.read(&mut buffer).expect("Failed to read data");
+                if count == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..count]);
+            }
+        }
+
+        format!("{:x}", hasher.finish())
     }
 }
 

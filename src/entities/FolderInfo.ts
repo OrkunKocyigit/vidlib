@@ -26,6 +26,6 @@ export class FolderInfo extends FileInfo implements IFolderInfo {
       ({ depth, name, path, empty, folders, videos }) =>
         new FolderInfo(depth, name, path, empty, folders, videos)
     );
-    this.videos = videos.map(({ depth, name, path }) => new VideoFile(depth, name, path));
+    this.videos = videos.map(({ id, depth, name, path }) => new VideoFile(depth, name, path, id));
   }
 }

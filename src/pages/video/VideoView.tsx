@@ -5,7 +5,7 @@ export interface VideoViewProps {
 }
 
 const VideoView = function (props: VideoViewProps): JSX.Element {
-  return <div>{props.video?.displayName}</div>;
+  return <div>{JSON.stringify(props.video, null, 4)}</div>;
 };
 
 export default VideoView;
