@@ -11,13 +11,13 @@ pub fn load_database(app_handle: &AppHandle) -> Result<Connection, Error> {
     fs::create_dir_all(&path).expect("App data directory creation failed");
     let sqlite = path.join("profile.sqlite");
     let mut db = Connection::open(sqlite)?;
-    let user_version: f32 = db.pragma_query_value(None, "user_version", |row| Ok(row.get(0)?))?;
+    let user_version: u32 = db.pragma_query_value(None, "user_version", |row| Ok(row.get(0)?))?;
     upgrade_database(&mut db, user_version)?;
     Ok(db)
 }
 
-fn upgrade_database(connection: &mut Connection, version: f32) -> Result<(), Error> {
-    if version < 1.0 {
+fn upgrade_database(connection: &mut Connection, version: u32) -> Result<(), Error> {
+    if version < 1 {
         let transaction = connection.transaction()?;
         let sql = "CREATE TABLE PATHS (
         id Integer PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +26,23 @@ fn upgrade_database(connection: &mut Connection, version: f32) -> Result<(), Err
         transaction
             .execute(sql, [])
             .expect("Path table creation failed");
-        transaction.pragma_update(None, "user_version", 1.0)?;
+        transaction.pragma_update(None, "user_version", 1)?;
+        transaction.commit()?;
+    }
+    if version < 2 {
+        let transaction = connection.transaction()?;
+        let sql = "CREATE TABLE VIDEOS (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        rating INTEGER,
+        notes TEXT,
+        watched INTEGER,
+        category INTEGER
+        )";
+        transaction
+            .execute(sql, [])
+            .expect("Path table creation failed");
+        transaction.pragma_update(None, "user_version", 2)?;
         transaction.commit()?;
     }
     Ok(())
