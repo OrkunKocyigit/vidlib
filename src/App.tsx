@@ -11,7 +11,7 @@ function App(): JSX.Element {
 
   return (
     <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-      <MantineProvider withGlobalStyles withNormalizeCSS>
+      <MantineProvider withGlobalStyles withNormalizeCSS theme={{ primaryColor: 'red' }}>
         <MainView></MainView>
       </MantineProvider>
     </ColorSchemeProvider>

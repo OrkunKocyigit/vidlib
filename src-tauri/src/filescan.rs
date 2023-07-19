@@ -128,6 +128,7 @@ impl FolderInfo {
                 let mut folder = FolderInfo::new(path, self.depth + 1);
                 folder.read_folder();
                 self.push_folder(folder);
+                self.empty = false;
             }
         }
     }

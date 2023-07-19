@@ -2,12 +2,13 @@ import { type FolderInfo } from '../../../entities/FolderInfo';
 import React from 'react';
 import FileTreeView from './FileTreeView';
 import VideoFileView from './VideoFileView';
-import { Collapse, Group, Text, UnstyledButton } from '@mantine/core';
+import { Box, Collapse, Flex, Group, ThemeIcon, UnstyledButton } from '@mantine/core';
 import { IconArrowDown, IconArrowRight, IconFolder, IconFolderOpen } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import styled from 'styled-components';
+import useStyles from './FolderInfoView.styles';
 
-interface Props {
+interface FolderInfoProps {
   folder: FolderInfo;
 }
 
@@ -16,42 +17,53 @@ const EmptyIcon = styled.div`
   height: 1rem;
 `;
 
-function renderToggleIcon(folder: FolderInfo, state: boolean): JSX.Element | null {
+function renderToggleIcon(
+  folder: FolderInfo,
+  state: boolean,
+  cssClass: string
+): JSX.Element | null {
   if (folder.empty) {
-    return <EmptyIcon></EmptyIcon>;
+    return <EmptyIcon className={cssClass}></EmptyIcon>;
   } else if (state) {
-    return <IconArrowDown width="1rem" height="1rem"></IconArrowDown>;
+    return <IconArrowDown width="1rem" height="1rem" className={cssClass}></IconArrowDown>;
   } else {
-    return <IconArrowRight width="1rem" height="1rem"></IconArrowRight>;
+    return <IconArrowRight width="1rem" height="1rem" className={cssClass}></IconArrowRight>;
   }
 }
 
 function renderFolderIcon(folder: FolderInfo, state: boolean): JSX.Element | null {
   if (folder.empty || !state) {
-    return <IconFolder></IconFolder>;
+    return <IconFolder width="0.9rem"></IconFolder>;
   } else {
-    return <IconFolderOpen></IconFolderOpen>;
+    return <IconFolderOpen width="0.9rem"></IconFolderOpen>;
   }
 }
 
-function FolderInfoView(props: Props): JSX.Element | null {
+function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   const [opened, { toggle }] = useDisclosure(false);
+  const { classes } = useStyles();
   return (
-    <div>
-      <UnstyledButton onClick={toggle}>
-        <Group noWrap>
-          {renderToggleIcon(props.folder, opened)}
-          {renderFolderIcon(props.folder, opened)}
-          <Text>{props.folder.displayName}</Text>
+    <>
+      <UnstyledButton onClick={toggle} className={classes.control}>
+        <Group position={'apart'} spacing={0}>
+          <Flex align={'center'}>
+            <ThemeIcon size={20} variant={'outline'}>
+              {renderFolderIcon(props.folder, opened)}
+            </ThemeIcon>
+            <Box ml={'md'}>{props.folder.displayName}</Box>
+          </Flex>
+          {renderToggleIcon(props.folder, opened, classes.icon)}
         </Group>
       </UnstyledButton>
-      <Collapse in={opened}>
-        <FileTreeView folders={props.folder.folders}></FileTreeView>
-        {props.folder.videos.map((video) => (
-          <VideoFileView video={video} key={video.path} />
-        ))}
-      </Collapse>
-    </div>
+      {!props.folder.empty ? (
+        <Collapse in={opened}>
+          <FileTreeView folders={props.folder.folders} className={classes.link}></FileTreeView>
+          {props.folder.videos.map((video) => (
+            <VideoFileView video={video} key={video.path} className={classes.link} />
+          ))}
+        </Collapse>
+      ) : null}
+    </>
   );
 }
 
