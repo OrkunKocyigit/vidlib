@@ -45,8 +45,8 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   return (
     <>
       <UnstyledButton onClick={toggle} className={classes.control}>
-        <Group position={'apart'} spacing={0}>
-          <Flex align={'center'}>
+        <Group position={'apart'} spacing={0} noWrap>
+          <Flex align={'center'} mr={'md'}>
             <ThemeIcon size={20} variant={'outline'}>
               {renderFolderIcon(props.folder, opened)}
             </ThemeIcon>

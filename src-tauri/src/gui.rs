@@ -1,9 +1,12 @@
 use std::path::{Path, PathBuf};
 
+use crate::database;
 use native_dialog::FileDialog;
+use rusqlite::Connection;
 
-use crate::filescan::{FileScan, FolderInfo};
+use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
+use crate::video::VideoEntry;
 
 pub async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
     let scan = FileScan::new(Path::new(path.as_str()));
@@ -53,6 +56,34 @@ pub async fn get_folders(folders: &Vec<String>) -> Result<Response<Vec<FolderInf
     Ok(Response {
         result: ResponseType::SUCCESS,
         response: Some(folder_infos),
+        error: None,
+    })
+}
+
+pub fn get_video(
+    video: &VideoFile,
+    videos: &mut Vec<VideoEntry>,
+    connection: &Connection,
+) -> Result<Response<VideoEntry>, ()> {
+    let mut iter = videos.iter();
+    let video_entry = match iter.find(|&item| item.id == video.id) {
+        Some(video) => video.clone(),
+        _ => {
+            let new_video = VideoEntry::new(
+                video.id.clone(),
+                video.name().clone().to_string(),
+                0,
+                "".to_string(),
+                false,
+            );
+            database::add_video(connection, &new_video).expect("Add video failed");
+            new_video
+        }
+    };
+    videos.push(video_entry.clone());
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(video_entry),
         error: None,
     })
 }

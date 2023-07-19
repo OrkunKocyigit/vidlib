@@ -11,7 +11,7 @@ const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
 
 #[derive(Deserialize, Serialize)]
 pub struct VideoFile {
-    id: String,
+    pub id: String,
     path: PathBuf,
     name: String,
     depth: usize,
@@ -77,6 +77,10 @@ impl VideoFile {
         }
 
         format!("{:x}", hasher.finish())
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 

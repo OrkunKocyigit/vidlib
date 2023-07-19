@@ -1,16 +1,17 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use gstreamer::init;
 use std::path::PathBuf;
 use std::sync::mpsc;
 
-use tauri::{AppHandle, Error, Manager};
+use gstreamer::init;
+use tauri::{AppHandle, Error, Manager, State};
 
-use crate::database::load_database;
-use crate::filescan::FolderInfo;
+use crate::database::{get_videos, load_database};
+use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::Response;
 use crate::state::AppState;
+use crate::video::VideoEntry;
 
 mod database;
 mod filescan;
@@ -61,22 +62,36 @@ async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<Fold
     file_scan(path).await
 }
 
+#[tauri::command]
+fn get_video(video: VideoFile, state: State<AppState>) -> Result<Response<VideoEntry>, ()> {
+    let mut videos_guard = state.videos.lock().unwrap();
+    let videos = videos_guard.as_mut().unwrap();
+    let connection_guard = state.db.lock().unwrap();
+    let connection = connection_guard.as_ref().unwrap();
+    let response = gui::get_video(&video, videos, connection);
+    return response;
+}
+
 fn main() {
     init().unwrap();
     tauri::Builder::default()
         .manage(AppState {
             db: Default::default(),
+            videos: Default::default(),
         })
         .invoke_handler(tauri::generate_handler![
             file_scan,
             select_folder,
             get_folders,
-            add_folder
+            add_folder,
+            get_video
         ])
         .setup(|app| {
             let handle = app.handle();
             let state = handle.state::<AppState>();
             let db = load_database(&handle).expect("Load database failed");
+            let videos = get_videos(&db)?;
+            *state.videos.lock().unwrap() = Some(videos);
             *state.db.lock().unwrap() = Some(db);
             Ok(())
         })

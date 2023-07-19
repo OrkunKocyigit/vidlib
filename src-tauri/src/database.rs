@@ -1,5 +1,6 @@
 use std::fs;
 
+use crate::video::VideoEntry;
 use rusqlite::{named_params, Connection, Error};
 use tauri::AppHandle;
 
@@ -62,5 +63,32 @@ pub fn get_paths(connection: &Connection) -> Result<Vec<String>, Error> {
 pub fn add_path(connection: &Connection, path: &String) -> Result<(), Error> {
     let mut query = connection.prepare("INSERT INTO PATHS(path) VALUES (@path)")?;
     query.execute(named_params! {"@path":path})?;
+    Ok(())
+}
+
+pub fn get_videos(connection: &Connection) -> Result<Vec<VideoEntry>, Error> {
+    let mut query = connection.prepare("SELECT * FROM VIDEOS")?;
+    let mut rows = query.query([])?;
+    let mut videos = Vec::new();
+    while let Some(row) = rows.next()? {
+        let id = row.get("id")?;
+        let name = row.get("name")?;
+        let rating = row.get("rating")?;
+        let notes = row.get("notes")?;
+        let watched = row.get("watched")?;
+        videos.push(VideoEntry::new(id, name, rating, notes, watched))
+    }
+    Ok(videos)
+}
+
+pub fn add_video(connection: &Connection, video_entry: &VideoEntry) -> Result<(), Error> {
+    let mut query = connection.prepare("INSERT INTO VIDEOS(id, name, rating, notes, watched) VALUES (@id, @name, @rating, @notes, @watched)")?;
+    query.execute(named_params! {
+        "@id": video_entry.id,
+        "@name": video_entry.name(),
+        "@rating": video_entry.rating(),
+        "@notes": video_entry.notes(),
+        "@watched": video_entry.watched(),
+    })?;
     Ok(())
 }
