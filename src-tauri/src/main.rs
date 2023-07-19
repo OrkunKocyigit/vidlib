@@ -63,7 +63,7 @@ async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<Fold
 }
 
 #[tauri::command]
-fn get_video(video: VideoFile, state: State<AppState>) -> Result<Response<VideoEntry>, ()> {
+fn get_video(state: State<AppState>, video: VideoFile) -> Result<Response<VideoEntry>, ()> {
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
     let connection_guard = state.db.lock().unwrap();
