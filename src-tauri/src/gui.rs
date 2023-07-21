@@ -6,6 +6,7 @@ use rusqlite::Connection;
 
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
+use crate::state::ThumbnailEntry;
 use crate::video::VideoEntry;
 
 pub async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
@@ -64,6 +65,7 @@ pub fn get_video(
     video: &mut VideoFile,
     videos: &mut Vec<VideoEntry>,
     connection: &Connection,
+    thumbnails: &mut Vec<ThumbnailEntry>,
 ) -> Result<Response<VideoFile>, ()> {
     let mut iter = videos.iter();
     let video_entry = match iter.find(|&item| item.id == video.id) {

@@ -67,7 +67,9 @@ fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<Vi
     let videos = videos_guard.as_mut().unwrap();
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
-    let response = gui::get_video(&mut video, videos, connection);
+    let mut thumbnails_guard = state.thumbnails.lock().unwrap();
+    let thumbnails = thumbnails_guard.as_mut().unwrap();
+    let response = gui::get_video(&mut video, videos, connection, thumbnails);
     return response;
 }
 
@@ -77,6 +79,7 @@ fn main() {
         .manage(AppState {
             db: Default::default(),
             videos: Default::default(),
+            thumbnails: Default::default(),
         })
         .invoke_handler(tauri::generate_handler![
             file_scan,
@@ -89,9 +92,11 @@ fn main() {
             let handle = app.handle();
             let state = handle.state::<AppState>();
             let db = load_database(&handle).expect("Load database failed");
-            let videos = get_videos(&db)?;
+            let videos = get_videos(&db).expect("Load videos failed");
+            let thumbnails = state::get_thumbnails(&handle);
             *state.videos.lock().unwrap() = Some(videos);
             *state.db.lock().unwrap() = Some(db);
+            *state.thumbnails.lock().unwrap() = Some(thumbnails);
             Ok(())
         })
         .run(tauri::generate_context!())
