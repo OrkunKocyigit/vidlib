@@ -3,18 +3,20 @@ use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
-use crate::video::is_video;
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
+use crate::video::{is_video, VideoEntry};
+
 const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct VideoFile {
     pub id: String,
     path: PathBuf,
     name: String,
     depth: usize,
+    video: Option<VideoEntry>,
 }
 
 impl VideoFile {
@@ -27,6 +29,7 @@ impl VideoFile {
             path: path_ref,
             name,
             depth,
+            video: None,
         }
     }
 
@@ -81,6 +84,10 @@ impl VideoFile {
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn set_video(&mut self, video: Option<VideoEntry>) {
+        self.video = video;
     }
 }
 

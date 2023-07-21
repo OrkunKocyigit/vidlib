@@ -61,10 +61,10 @@ pub async fn get_folders(folders: &Vec<String>) -> Result<Response<Vec<FolderInf
 }
 
 pub fn get_video(
-    video: &VideoFile,
+    video: &mut VideoFile,
     videos: &mut Vec<VideoEntry>,
     connection: &Connection,
-) -> Result<Response<VideoEntry>, ()> {
+) -> Result<Response<VideoFile>, ()> {
     let mut iter = videos.iter();
     let video_entry = match iter.find(|&item| item.id == video.id) {
         Some(video) => video.clone(),
@@ -77,13 +77,14 @@ pub fn get_video(
                 false,
             );
             database::add_video(connection, &new_video).expect("Add video failed");
-            new_video
+            videos.push(new_video);
+            videos.last().unwrap().clone()
         }
     };
-    videos.push(video_entry.clone());
+    video.set_video(Some(video_entry));
     Ok(Response {
         result: ResponseType::SUCCESS,
-        response: Some(video_entry),
+        response: Some(video.clone()),
         error: None,
     })
 }

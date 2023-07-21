@@ -11,7 +11,6 @@ use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::Response;
 use crate::state::AppState;
-use crate::video::VideoEntry;
 
 mod database;
 mod filescan;
@@ -63,12 +62,12 @@ async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<Fold
 }
 
 #[tauri::command]
-fn get_video(state: State<AppState>, video: VideoFile) -> Result<Response<VideoEntry>, ()> {
+fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<VideoFile>, ()> {
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
-    let response = gui::get_video(&video, videos, connection);
+    let response = gui::get_video(&mut video, videos, connection);
     return response;
 }
 
