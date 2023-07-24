@@ -19,9 +19,14 @@ serde_json = "1.0"
 native-dialog = "0"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 infer = "0.15.0"
+image = "0.24.6"
+derive_more = "0.99.17"
 gstreamer = "0.20.7"
+gstreamer-app = "0.20.7"
+gstreamer-video = "0.20.7"
 gstreamer-pbutils = "0.20.7"
 url = "2.4.0"
+anyhow = "1.0.71"
 
 [dependencies.xxhash-rust]
 version = "0.8.5"

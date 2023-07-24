@@ -1,12 +1,12 @@
 use std::path::{Path, PathBuf};
 
-use crate::database;
 use native_dialog::FileDialog;
 use rusqlite::Connection;
 
+use crate::database;
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
-use crate::state::ThumbnailEntry;
+use crate::state::{ThumbnailCache, ThumbnailEntry};
 use crate::video::VideoEntry;
 
 pub async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
@@ -65,7 +65,7 @@ pub fn get_video(
     video: &mut VideoFile,
     videos: &mut Vec<VideoEntry>,
     connection: &Connection,
-    thumbnails: &mut Vec<ThumbnailEntry>,
+    thumbnail_cache: &mut ThumbnailCache,
 ) -> Result<Response<VideoFile>, ()> {
     let mut iter = videos.iter();
     let video_entry = match iter.find(|&item| item.id == video.id) {
@@ -84,9 +84,34 @@ pub fn get_video(
         }
     };
     video.set_video(Some(video_entry));
+    set_thumbnails(video, thumbnail_cache);
     Ok(Response {
         result: ResponseType::SUCCESS,
         response: Some(video.clone()),
         error: None,
     })
+}
+
+fn set_thumbnails(video: &mut VideoFile, thumbnail_cache: &mut ThumbnailCache) {
+    let id = video.id.clone();
+    let thumbnails = thumbnail_cache.thumbnails();
+    match thumbnails.iter().position(|thumbnail| thumbnail.id == id) {
+        Some(index) => {
+            let mut paths: Vec<PathBuf> = Vec::new();
+            thumbnails[index]
+                .paths()
+                .iter()
+                .for_each(|path| paths.push(path.clone()));
+            video.set_thumbnails(Some(paths));
+        }
+        _ => {
+            let mut entry = ThumbnailEntry::new(id.as_str());
+            let thumbnail_paths: Vec<PathBuf> = video.create_thumbnails(thumbnail_cache.path());
+            thumbnail_paths
+                .iter()
+                .for_each(|path| entry.add_video(&path));
+            thumbnail_cache.add_video(entry);
+            video.set_thumbnails(Some(thumbnail_paths));
+        }
+    }
 }

@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
+use crate::video;
 use crate::video::{is_video, VideoEntry};
 
 const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
@@ -94,6 +95,23 @@ impl VideoFile {
 
     pub fn set_thumbnails(&mut self, thumbnails: Option<Vec<PathBuf>>) {
         self.thumbnails = thumbnails;
+    }
+
+    pub fn create_thumbnails<P: AsRef<Path>>(&self, path: &P) -> Vec<PathBuf> {
+        let p = path.as_ref().to_path_buf();
+        let image = p.join(format!("{}_01.png", &self.id));
+        let video_url = url::Url::from_file_path(&self.path).expect("Video can't be opened");
+        let mut result = Vec::new();
+        match video::create_thumbnail_video_pipeline(video_url, &image)
+            .and_then(|pipeline| video::create_thumbnail(pipeline, 0.2))
+        {
+            Ok(r) => {
+                result.push(image);
+                r
+            }
+            Err(e) => eprintln!("Error {e}"),
+        }
+        result
     }
 }
 
