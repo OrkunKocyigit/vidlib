@@ -97,7 +97,7 @@ impl VideoFile {
         let video_url = url::Url::from_file_path(&self.path).expect("Video can't be opened");
         let mut result = Vec::new();
         match video::create_thumbnail_video_pipeline(video_url, &image)
-            .and_then(|pipeline| video::create_thumbnail(pipeline, 0.2))
+            .and_then(|pipeline| video::create_thumbnail(pipeline))
         {
             Ok(r) => {
                 result.push(image);

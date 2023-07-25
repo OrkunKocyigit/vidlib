@@ -9,7 +9,6 @@ use std::path::{Path, PathBuf};
 use anyhow::Error;
 use derive_more::{Display, Error};
 use gstreamer::prelude::*;
-use gstreamer::Format;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -182,7 +181,7 @@ pub fn create_thumbnail_video_pipeline(
     Ok(pipeline)
 }
 
-pub fn create_thumbnail(pipeline: gst::Pipeline, position: f64) -> Result<(), Error> {
+pub fn create_thumbnail(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Paused)?;
 
     let bus = pipeline
@@ -198,21 +197,12 @@ pub fn create_thumbnail(pipeline: gst::Pipeline, position: f64) -> Result<(), Er
             MessageView::AsyncDone(..) => {
                 if !seeked {
                     // AsyncDone means that the pipeline has started now and that we can seek
-                    let value = pipeline
-                        .query_duration_generic(Format::Time)
-                        .unwrap()
-                        .value() as f64;
-                    let seek_position = (value * position) as u64;
-                    println!(
-                        "Got AsyncDone message, seeking to {}s",
-                        seek_position / 1000000000
-                    );
+                    let duration = pipeline.query_duration::<gst::ClockTime>().unwrap();
+                    let seek_position = duration / 2;
+                    println!("Got AsyncDone message, seeking to {}s", seek_position);
 
                     if pipeline
-                        .seek_simple(
-                            gst::SeekFlags::FLUSH,
-                            seek_position * gst::ClockTime::SECOND,
-                        )
+                        .seek_simple(gst::SeekFlags::FLUSH, seek_position)
                         .is_err()
                     {
                         println!("Failed to seek, taking first frame");
