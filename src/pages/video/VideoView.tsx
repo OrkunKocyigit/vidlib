@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { GetVideo } from '../../service/GetVideo';
 import { type VideoEntry } from '../../entities/VideoEntry';
 import { GetThumbnail } from '../../service/GetThumbnail';
-import { Box } from '@mantine/core';
+import { Avatar, Flex, Group } from '@mantine/core';
 
 export interface VideoViewProps {
   video?: VideoFile;
@@ -31,10 +31,13 @@ const VideoView = function (props: VideoViewProps): JSX.Element {
     }
   }, [props.video]);
   return (
-    <Box>
+    <Flex>
+      <Group noWrap>
+        {imageSrc != null ? <Avatar size={'xl'} radius={'md'} src={imageSrc[0]}></Avatar> : null}
+      </Group>
       {JSON.stringify(videoEntry)}
       {JSON.stringify(imageSrc)}
-    </Box>
+    </Flex>
   );
 };
 
