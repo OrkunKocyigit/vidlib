@@ -18,7 +18,6 @@ pub struct VideoFile {
     name: String,
     depth: usize,
     video: Option<VideoEntry>,
-    thumbnails: Option<Vec<PathBuf>>,
 }
 
 impl VideoFile {
@@ -32,7 +31,6 @@ impl VideoFile {
             name,
             depth,
             video: None,
-            thumbnails: None,
         }
     }
 
@@ -91,10 +89,6 @@ impl VideoFile {
 
     pub fn set_video(&mut self, video: Option<VideoEntry>) {
         self.video = video;
-    }
-
-    pub fn set_thumbnails(&mut self, thumbnails: Option<Vec<PathBuf>>) {
-        self.thumbnails = thumbnails;
     }
 
     pub fn create_thumbnails<P: AsRef<Path>>(&self, path: &P) -> Vec<PathBuf> {

@@ -67,10 +67,15 @@ fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<Vi
     let videos = videos_guard.as_mut().unwrap();
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
+    let response = gui::get_video(&mut video, videos, connection);
+    return response;
+}
+
+#[tauri::command]
+fn get_thumbnail(state: State<AppState>, video: VideoFile) -> Result<Response<Vec<PathBuf>>, ()> {
     let mut thumbnails_guard = state.thumbnail_cache.lock().unwrap();
     let thumbnails = thumbnails_guard.as_mut().unwrap();
-    let response = gui::get_video(&mut video, videos, connection, thumbnails);
-    return response;
+    gui::get_thumbnail(video, thumbnails)
 }
 
 fn main() {
@@ -86,7 +91,8 @@ fn main() {
             select_folder,
             get_folders,
             add_folder,
-            get_video
+            get_video,
+            get_thumbnail
         ])
         .setup(|app| {
             let handle = app.handle();

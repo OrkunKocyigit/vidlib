@@ -2,13 +2,16 @@ import { type VideoFile } from '../../entities/VideoFile';
 import { useEffect, useState } from 'react';
 import { GetVideo } from '../../service/GetVideo';
 import { type VideoEntry } from '../../entities/VideoEntry';
+import { GetThumbnail } from '../../service/GetThumbnail';
+import { Box } from '@mantine/core';
 
 export interface VideoViewProps {
   video?: VideoFile;
 }
 
 const VideoView = function (props: VideoViewProps): JSX.Element {
-  const [videoEntry, setVideoEntry] = useState<VideoEntry | null>(null);
+  const [videoEntry, setVideoEntry] = useState<VideoEntry | undefined>(undefined);
+  const [imageSrc, setImageSrc] = useState<string[] | undefined>(undefined);
   useEffect(() => {
     if (props.video != null) {
       GetVideo(props.video)
@@ -18,9 +21,21 @@ const VideoView = function (props: VideoViewProps): JSX.Element {
         .catch((reason) => {
           console.error(reason);
         });
+      GetThumbnail(props.video)
+        .then((value) => {
+          setImageSrc(value.response);
+        })
+        .catch((reason) => {
+          console.error(reason);
+        });
     }
   }, [props.video]);
-  return <div>{JSON.stringify(videoEntry, null, 4)}</div>;
+  return (
+    <Box>
+      {JSON.stringify(videoEntry)}
+      {JSON.stringify(imageSrc)}
+    </Box>
+  );
 };
 
 export default VideoView;

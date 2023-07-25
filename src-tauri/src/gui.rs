@@ -65,7 +65,6 @@ pub fn get_video(
     video: &mut VideoFile,
     videos: &mut Vec<VideoEntry>,
     connection: &Connection,
-    thumbnail_cache: &mut ThumbnailCache,
 ) -> Result<Response<VideoFile>, ()> {
     let mut iter = videos.iter();
     let video_entry = match iter.find(|&item| item.id == video.id) {
@@ -84,7 +83,6 @@ pub fn get_video(
         }
     };
     video.set_video(Some(video_entry));
-    set_thumbnails(video, thumbnail_cache);
     Ok(Response {
         result: ResponseType::SUCCESS,
         response: Some(video.clone()),
@@ -92,26 +90,31 @@ pub fn get_video(
     })
 }
 
-fn set_thumbnails(video: &mut VideoFile, thumbnail_cache: &mut ThumbnailCache) {
+pub fn get_thumbnail(
+    video: VideoFile,
+    thumbnail_cache: &mut ThumbnailCache,
+) -> Result<Response<Vec<PathBuf>>, ()> {
+    let thumbnails = get_thumbnails(video, thumbnail_cache);
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(thumbnails),
+        error: None,
+    })
+}
+
+fn get_thumbnails(video: VideoFile, thumbnail_cache: &mut ThumbnailCache) -> Vec<PathBuf> {
     let id = video.id.clone();
     let thumbnails = thumbnail_cache.thumbnails();
     match thumbnails.iter().position(|thumbnail| thumbnail.id == id) {
-        Some(index) => {
-            let mut paths: Vec<PathBuf> = Vec::new();
-            thumbnails[index]
-                .paths()
-                .iter()
-                .for_each(|path| paths.push(path.clone()));
-            video.set_thumbnails(Some(paths));
-        }
+        Some(index) => thumbnails[index].paths().to_owned(),
         _ => {
             let mut entry = ThumbnailEntry::new(id.as_str());
             let thumbnail_paths: Vec<PathBuf> = video.create_thumbnails(thumbnail_cache.path());
             thumbnail_paths
                 .iter()
-                .for_each(|path| entry.add_video(&path));
+                .for_each(|path| entry.add_video(path));
             thumbnail_cache.add_video(entry);
-            video.set_thumbnails(Some(thumbnail_paths));
+            thumbnail_paths
         }
     }
 }
