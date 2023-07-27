@@ -2,9 +2,10 @@ import { Flex, Group, Text, Title } from '@mantine/core';
 import { type VideoFile } from '../../../entities/VideoFile';
 import VideoThumbnail from './VideoThumbnail';
 import VideoRating from './VideoRating';
+import VideoWatch from './VideoWatch';
 
 export interface VideoHeaderProps {
-  video?: VideoFile;
+  video: VideoFile;
 }
 
 function VideoHeader(props: VideoHeaderProps): JSX.Element {
@@ -16,6 +17,9 @@ function VideoHeader(props: VideoHeaderProps): JSX.Element {
         <Text>{props.video?.path}</Text>
         <Group>
           <VideoRating video={props.video}></VideoRating>
+        </Group>
+        <Group>
+          <VideoWatch video={props.video}></VideoWatch>
         </Group>
       </Flex>
     </Group>
