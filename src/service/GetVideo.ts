@@ -1,14 +1,17 @@
-import { type VideoEntry } from '../entities/VideoEntry';
 import { type IServiceResponse, ServiceResponse } from './ServiceResponse';
 import { invoke } from '@tauri-apps/api';
-import { type VideoFile } from '../entities/VideoFile';
+import { VideoFile, type IVideoFile } from '../entities/VideoFile';
 
-export async function GetVideo(video: VideoFile): Promise<ServiceResponse<VideoEntry>> {
-  return await invoke<IServiceResponse<VideoEntry>>('get_video', { video }).then((value) => {
+export async function GetVideo(video: VideoFile): Promise<ServiceResponse<VideoFile>> {
+  return await invoke<IServiceResponse<IVideoFile>>('get_video', { video }).then((value) => {
     const { error, result, response } = value;
     if (error !== null) {
       throw new Error(error);
     }
-    return new ServiceResponse(result, response);
+    const iVideo = response as IVideoFile;
+    return new ServiceResponse(
+      result,
+      new VideoFile(iVideo.depth, iVideo.name, iVideo.path, iVideo.id, iVideo.video)
+    );
   });
 }
