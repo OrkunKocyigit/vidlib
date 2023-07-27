@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::Path;
 
 use crate::video::VideoEntry;
 use rusqlite::{named_params, Connection, Error};
@@ -44,6 +45,19 @@ fn upgrade_database(connection: &mut Connection, version: u32) -> Result<(), Err
             .execute(sql, [])
             .expect("Path table creation failed");
         transaction.pragma_update(None, "user_version", 2)?;
+        transaction.commit()?;
+    }
+    if version < 3 {
+        let transaction = connection.transaction()?;
+        let sql = "CREATE TABLE VIDEO_CACHE (
+        path TEXT PRIMARY KEY,
+        size NUMBER,
+        id TEXT
+        )";
+        transaction
+            .execute(sql, [])
+            .expect("Video cache table creation failed");
+        transaction.pragma_update(None, "user_version", 3)?;
         transaction.commit()?;
     }
     Ok(())
@@ -125,4 +139,33 @@ pub(crate) fn update_watched<'a>(
         })
         .expect("Execute failed");
     Some(video)
+}
+
+pub(crate) fn add_video_cache<P: AsRef<Path>>(
+    connection: &Connection,
+    path: &P,
+    size: &u64,
+    id: &String,
+) -> () {
+    let mut query = connection
+        .prepare("INSERT INTO VIDEO_CACHE(path, size, id) VALUES(@path, @size, @id)")
+        .expect("Query Failed");
+    query
+        .execute(named_params! {
+            "@path": path.as_ref().display().to_string(),
+            "@size": size,
+            "@id": id
+        })
+        .expect("Execute failed");
+}
+
+pub(crate) fn delete_video_cache<P: AsRef<Path>>(connection: &Connection, path: &P) -> () {
+    let mut query = connection
+        .prepare("DELETE FROM VIDEO_CACHE WHERE path = @path")
+        .expect("Query Failed");
+    query
+        .execute(named_params! {
+            "@path": path.as_ref().display().to_string(),
+        })
+        .expect("Execute failed");
 }
