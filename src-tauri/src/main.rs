@@ -11,6 +11,7 @@ use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::Response;
 use crate::state::AppState;
+use crate::video::VideoEntry;
 
 mod database;
 mod filescan;
@@ -78,6 +79,19 @@ fn get_thumbnail(state: State<AppState>, video: VideoFile) -> Result<Response<Ve
     gui::get_thumbnail(video, thumbnails)
 }
 
+#[tauri::command]
+fn set_video_rating(
+    state: State<AppState>,
+    video: VideoEntry,
+    rating: usize,
+) -> Result<Response<usize>, ()> {
+    let connection_guard = state.db.lock().unwrap();
+    let connection = connection_guard.as_ref().unwrap();
+    let mut videos_guard = state.videos.lock().unwrap();
+    let videos = videos_guard.as_mut().unwrap();
+    gui::update_rating(connection, videos, video, rating)
+}
+
 fn main() {
     init().unwrap();
     tauri::Builder::default()
@@ -92,7 +106,8 @@ fn main() {
             get_folders,
             add_folder,
             get_video,
-            get_thumbnail
+            get_thumbnail,
+            set_video_rating
         ])
         .setup(|app| {
             let handle = app.handle();

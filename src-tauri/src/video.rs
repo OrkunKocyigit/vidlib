@@ -53,6 +53,10 @@ impl VideoEntry {
     pub fn watched(&self) -> bool {
         self.watched
     }
+
+    pub fn set_rating(&mut self, rating: usize) {
+        self.rating = rating;
+    }
 }
 
 #[derive(Debug, Display, Error)]

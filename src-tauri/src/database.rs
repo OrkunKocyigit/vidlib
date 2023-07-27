@@ -92,3 +92,20 @@ pub fn add_video(connection: &Connection, video_entry: &VideoEntry) -> Result<()
     })?;
     Ok(())
 }
+
+pub(crate) fn update_rating<'a>(
+    connection: &Connection,
+    video: &'a mut VideoEntry,
+    new_rating: usize,
+) -> Option<&'a mut VideoEntry> {
+    let mut query = connection
+        .prepare("UPDATE VIDEOS SET RATING = @rating WHERE ID = @id")
+        .expect("Query failed");
+    query
+        .execute(named_params! {
+            "@rating": new_rating,
+            "@id": video.id
+        })
+        .expect("Execute failed");
+    Some(video)
+}

@@ -118,3 +118,24 @@ fn get_thumbnails(video: VideoFile, thumbnail_cache: &mut ThumbnailCache) -> Vec
         }
     }
 }
+
+pub fn update_rating(
+    connection: &Connection,
+    videos: &mut Vec<VideoEntry>,
+    video: VideoEntry,
+    new_rating: usize,
+) -> Result<Response<usize>, ()> {
+    videos
+        .iter_mut()
+        .find(|item| item.id == video.id)
+        .and_then(|item| database::update_rating(connection, item, new_rating))
+        .and_then(|item| {
+            item.set_rating(new_rating);
+            Some(())
+        });
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(new_rating),
+        error: None,
+    })
+}
