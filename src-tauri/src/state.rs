@@ -72,7 +72,7 @@ pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
     fs::create_dir_all(&path).expect("App data directory creation failed");
     let thumbnail_path = path.join("thumbnail");
     fs::create_dir_all(&thumbnail_path).expect("Thumbnail folder creation failed");
-    let mut thumbnails: Vec<ThumbnailEntry> = Vec::new();
+    let mut thumbnail_cache = ThumbnailCache::new(&thumbnail_path);
     for entry in read_dir(&thumbnail_path).unwrap() {
         let dir_entry = entry.unwrap();
         if dir_entry.path().is_file() {
@@ -82,16 +82,20 @@ pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
                 let mut split = file_name.split("_");
                 let id = split.next().unwrap();
                 let path = dir_entry.path();
-                match thumbnails.iter().position(|thumb| thumb.id.as_str() == id) {
-                    Some(index) => thumbnails[index].add_video(&path),
+                match thumbnail_cache
+                    .thumbnails
+                    .iter()
+                    .position(|thumb| thumb.id.as_str() == id)
+                {
+                    Some(index) => thumbnail_cache.thumbnails[index].add_video(&path),
                     _ => {
                         let mut entry = ThumbnailEntry::new(id);
                         entry.add_video(&path);
-                        thumbnails.push(entry);
+                        thumbnail_cache.thumbnails.push(entry);
                     }
                 }
             }
         }
     }
-    ThumbnailCache::new(thumbnail_path)
+    thumbnail_cache
 }
