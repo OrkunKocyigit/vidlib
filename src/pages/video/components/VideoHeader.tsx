@@ -3,6 +3,7 @@ import { type VideoFile } from '../../../entities/VideoFile';
 import VideoThumbnail from './VideoThumbnail';
 import VideoRating from './VideoRating';
 import VideoWatch from './VideoWatch';
+import VideoLaunch from './VideoLaunch';
 
 export interface VideoHeaderProps {
   video: VideoFile;
@@ -18,6 +19,7 @@ function VideoHeader(props: VideoHeaderProps): JSX.Element {
         <Flex gap={'lg'}>
           <VideoRating video={props.video}></VideoRating>
           <VideoWatch video={props.video}></VideoWatch>
+          <VideoLaunch video={props.video}></VideoLaunch>
         </Flex>
       </Flex>
     </Group>
