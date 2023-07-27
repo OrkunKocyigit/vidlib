@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::fs::read_dir;
 use std::path::{Path, PathBuf};
@@ -60,28 +61,25 @@ impl ThumbnailEntry {
 }
 
 pub struct VideoCache {
-    items: Vec<VideoCacheItem>,
+    items: HashMap<String, VideoCacheItem>,
 }
 
 impl VideoCache {
     pub fn new() -> Self {
-        Self { items: Vec::new() }
-    }
-
-    pub fn add_item(&mut self, item: VideoCacheItem) {
-        self.items.push(item)
+        Self {
+            items: HashMap::new(),
+        }
     }
 }
 
 pub struct VideoCacheItem {
-    path: PathBuf,
     filesize: u64,
     id: String,
 }
 
 impl VideoCacheItem {
-    pub fn new(path: PathBuf, filesize: u64, id: String) -> Self {
-        Self { path, filesize, id }
+    pub fn new(filesize: u64, id: String) -> Self {
+        Self { filesize, id }
     }
 }
 
