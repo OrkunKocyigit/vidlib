@@ -14,7 +14,7 @@ const VideoView = function (props: VideoViewProps): JSX.Element {
   const [videoFile, setVideoFile] = useState<VideoFile | undefined>(undefined);
 
   useEffect(() => {
-    if (props.video != null && (videoFile == null || videoFile.id !== props.video.id)) {
+    if (props.video != null && (videoFile == null || videoFile.path !== props.video.path)) {
       open();
       GetVideo(props.video)
         .then((value) => {
