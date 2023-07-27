@@ -4,11 +4,11 @@ use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use crate::database;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
+use crate::database;
 use crate::video::VideoEntry;
 
 pub struct ThumbnailCache {

@@ -178,7 +178,7 @@ impl FileScan {
         }
     }
 
-    pub async fn run(&self) -> Result<FolderInfo, &str> {
+    pub fn run(&self) -> Result<FolderInfo, &str> {
         let is_dir = &self.path.is_dir();
         if !is_dir {
             return Err("Invalid path");

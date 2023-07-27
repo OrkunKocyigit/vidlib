@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+use rusqlite::{named_params, Connection, Error};
+use tauri::AppHandle;
 
 use crate::state::VideoCacheItem;
 use crate::video::VideoEntry;
-use rusqlite::{named_params, Connection, Error};
-use tauri::AppHandle;
 
 pub fn load_database(app_handle: &AppHandle) -> Result<Connection, Error> {
     let path = app_handle

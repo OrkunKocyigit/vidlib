@@ -2,10 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::path::PathBuf;
-use std::sync::mpsc;
 
 use gstreamer::init;
-use tauri::{AppHandle, Error, Manager, State};
+use tauri::{Error, Manager, State};
 
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
@@ -21,8 +20,8 @@ mod state;
 mod video;
 
 #[tauri::command]
-async fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
-    gui::file_scan(path).await
+fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
+    gui::file_scan(path)
 }
 
 #[tauri::command]
@@ -31,18 +30,11 @@ fn select_folder() -> Result<Response<PathBuf>, ()> {
 }
 
 #[tauri::command]
-async fn get_folders(app_handle: AppHandle) -> Result<Response<Vec<FolderInfo>>, Error> {
-    let (tx, rx) = mpsc::channel();
-    tauri::async_runtime::spawn_blocking(move || {
-        let state = app_handle.state::<AppState>();
-        let db_guard = state.db.lock().unwrap();
-        let db = db_guard.as_ref().unwrap();
-        let paths = database::get_paths(&db).expect("Paths not found");
-        tx.send(paths).unwrap();
-    })
-    .await?;
-    let folders = rx.recv().unwrap();
-    let response = gui::get_folders(&folders).await;
+fn get_folders(state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Error> {
+    let db_guard = state.db.lock().unwrap();
+    let db = db_guard.as_ref().unwrap();
+    let folders = database::get_paths(&db).expect("Paths not found");
+    let response = gui::get_folders(&folders);
     if response.is_ok() {
         Ok(response.unwrap())
     } else {
@@ -51,15 +43,11 @@ async fn get_folders(app_handle: AppHandle) -> Result<Response<Vec<FolderInfo>>,
 }
 
 #[tauri::command]
-async fn add_folder(app_handle: AppHandle, path: String) -> Result<Response<FolderInfo>, ()> {
-    let path_clone = path.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        let state = app_handle.state::<AppState>();
-        let db_guard = state.db.lock().unwrap();
-        let db = db_guard.as_ref().unwrap();
-        database::add_path(db, &path_clone).expect("Paths not found");
-    });
-    file_scan(path).await
+fn add_folder(state: State<AppState>, path: String) -> Result<Response<FolderInfo>, ()> {
+    let db_guard = state.db.lock().unwrap();
+    let db = db_guard.as_ref().unwrap();
+    database::add_path(db, &path).expect("Paths not found");
+    gui::file_scan(path)
 }
 
 #[tauri::command]
