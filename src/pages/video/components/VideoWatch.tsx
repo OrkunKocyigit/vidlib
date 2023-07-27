@@ -17,22 +17,23 @@ function VideoWatch(props: VideoWatchProps): JSX.Element {
   return (
     <Box>
       {watched === true ? (
-        <Group
-          align={'center'}
-          onClick={() => {
-            updateWatched(props.video, false);
-          }}>
-          <ActionIcon color={'green'}>
+        <Group align={'center'}>
+          <ActionIcon
+            color={'green'}
+            onClick={() => {
+              updateWatched(props.video, false);
+            }}>
             <IconCheck></IconCheck>
           </ActionIcon>
           <Text>Watched</Text>
         </Group>
       ) : (
-        <Group
-          onClick={() => {
-            updateWatched(props.video, true);
-          }}>
-          <ActionIcon color={'red'}>
+        <Group>
+          <ActionIcon
+            color={'red'}
+            onClick={() => {
+              updateWatched(props.video, true);
+            }}>
             <IconX></IconX>
           </ActionIcon>
           <Text>Not Watched</Text>
