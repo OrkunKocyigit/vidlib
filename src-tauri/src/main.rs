@@ -105,6 +105,11 @@ fn set_watched(
     gui::update_watched(connection, videos, video, watched)
 }
 
+#[tauri::command]
+fn open_video(video: VideoFile) -> () {
+    opener::open(video.path()).unwrap();
+}
+
 fn main() {
     init().unwrap();
     tauri::Builder::default()
@@ -121,7 +126,8 @@ fn main() {
             get_video,
             get_thumbnail,
             set_video_rating,
-            set_watched
+            set_watched,
+            open_video
         ])
         .setup(|app| {
             let handle = app.handle();

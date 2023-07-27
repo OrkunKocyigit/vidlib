@@ -107,6 +107,10 @@ impl VideoFile {
         }
         result
     }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
 }
 
 #[derive(Deserialize, Serialize)]
