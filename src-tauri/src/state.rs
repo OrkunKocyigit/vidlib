@@ -3,6 +3,7 @@ use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+use crate::database;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
@@ -58,10 +59,37 @@ impl ThumbnailEntry {
     }
 }
 
+pub struct VideoCache {
+    items: Vec<VideoCacheItem>,
+}
+
+impl VideoCache {
+    pub fn new() -> Self {
+        Self { items: Vec::new() }
+    }
+
+    pub fn add_item(&mut self, item: VideoCacheItem) {
+        self.items.push(item)
+    }
+}
+
+pub struct VideoCacheItem {
+    path: PathBuf,
+    filesize: u64,
+    id: String,
+}
+
+impl VideoCacheItem {
+    pub fn new(path: PathBuf, filesize: u64, id: String) -> Self {
+        Self { path, filesize, id }
+    }
+}
+
 pub struct AppState {
     pub db: Mutex<Option<Connection>>,
     pub videos: Mutex<Option<Vec<VideoEntry>>>,
     pub thumbnail_cache: Mutex<Option<ThumbnailCache>>,
+    pub video_cache: Mutex<Option<VideoCache>>,
 }
 
 pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
@@ -98,4 +126,10 @@ pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
         }
     }
     thumbnail_cache
+}
+
+pub fn get_video_cache(connection: &Connection) -> VideoCache {
+    let mut cache = VideoCache::new();
+    let _ = database::get_video_cache_items(connection).and_then(|items| Ok(cache.items = items));
+    cache
 }

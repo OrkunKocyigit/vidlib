@@ -117,6 +117,7 @@ fn main() {
             db: Default::default(),
             videos: Default::default(),
             thumbnail_cache: Default::default(),
+            video_cache: Default::default(),
         })
         .invoke_handler(tauri::generate_handler![
             file_scan,
@@ -135,9 +136,11 @@ fn main() {
             let db = load_database(&handle).expect("Load database failed");
             let videos = get_videos(&db).expect("Load videos failed");
             let thumbnails = state::get_thumbnails(&handle);
+            let video_cache = state::get_video_cache(&db);
             *state.videos.lock().unwrap() = Some(videos);
             *state.db.lock().unwrap() = Some(db);
             *state.thumbnail_cache.lock().unwrap() = Some(thumbnails);
+            *state.video_cache.lock().unwrap() = Some(video_cache);
             Ok(())
         })
         .run(tauri::generate_context!())

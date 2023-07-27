@@ -1,6 +1,7 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+use crate::state::VideoCacheItem;
 use crate::video::VideoEntry;
 use rusqlite::{named_params, Connection, Error};
 use tauri::AppHandle;
@@ -168,4 +169,16 @@ pub(crate) fn delete_video_cache<P: AsRef<Path>>(connection: &Connection, path: 
             "@path": path.as_ref().display().to_string(),
         })
         .expect("Execute failed");
+}
+
+pub(crate) fn get_video_cache_items(connection: &Connection) -> Result<Vec<VideoCacheItem>, Error> {
+    let mut query = connection.prepare("SELECT * FROM VIDEO_CACHE")?;
+    let mut rows = query.query([])?;
+    let mut items = Vec::new();
+    while let Some(row) = rows.next()? {
+        let path: String = row.get("path")?;
+        let item = VideoCacheItem::new(PathBuf::from(path), row.get("size")?, row.get("id")?);
+        items.push(item);
+    }
+    Ok(items)
 }
