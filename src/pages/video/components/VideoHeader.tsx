@@ -15,12 +15,10 @@ function VideoHeader(props: VideoHeaderProps): JSX.Element {
       <Flex direction={'column'} gap={'md'}>
         <Title order={4}>{props.video?.name}</Title>
         <Text>{props.video?.path}</Text>
-        <Group>
+        <Flex gap={'lg'}>
           <VideoRating video={props.video}></VideoRating>
-        </Group>
-        <Group>
           <VideoWatch video={props.video}></VideoWatch>
-        </Group>
+        </Flex>
       </Flex>
     </Group>
   );
