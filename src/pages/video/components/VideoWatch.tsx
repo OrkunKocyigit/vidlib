@@ -1,7 +1,8 @@
 import { type VideoFile } from '../../../entities/VideoFile';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActionIcon, Box, Group, Text } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
+import { SetWatched } from '../../../service/SetWatched';
 
 interface VideoWatchProps {
   video: VideoFile;
@@ -10,8 +11,22 @@ interface VideoWatchProps {
 function VideoWatch(props: VideoWatchProps): JSX.Element {
   const [watched, setWatched] = useState(props.video?.video?.watched);
 
+  useEffect(() => {
+    if (props.video?.video != null) {
+      setWatched(props.video.video.watched);
+    }
+  }, [props.video?.video]);
+
   function updateWatched(video: VideoFile, value: boolean): void {
-    setWatched(value);
+    if (video.video != null) {
+      SetWatched(video.video, value)
+        .then((newWatched) => {
+          setWatched(newWatched.response);
+        })
+        .catch((reason) => {
+          console.error(reason);
+        });
+    }
   }
 
   return (
