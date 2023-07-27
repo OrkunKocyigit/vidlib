@@ -92,6 +92,19 @@ fn set_video_rating(
     gui::update_rating(connection, videos, video, rating)
 }
 
+#[tauri::command]
+fn set_watched(
+    state: State<AppState>,
+    video: VideoEntry,
+    watched: bool,
+) -> Result<Response<bool>, ()> {
+    let connection_guard = state.db.lock().unwrap();
+    let connection = connection_guard.as_ref().unwrap();
+    let mut videos_guard = state.videos.lock().unwrap();
+    let videos = videos_guard.as_mut().unwrap();
+    gui::update_watched(connection, videos, video, watched)
+}
+
 fn main() {
     init().unwrap();
     tauri::Builder::default()
@@ -107,7 +120,8 @@ fn main() {
             add_folder,
             get_video,
             get_thumbnail,
-            set_video_rating
+            set_video_rating,
+            set_watched
         ])
         .setup(|app| {
             let handle = app.handle();

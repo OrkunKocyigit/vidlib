@@ -109,3 +109,20 @@ pub(crate) fn update_rating<'a>(
         .expect("Execute failed");
     Some(video)
 }
+
+pub(crate) fn update_watched<'a>(
+    connection: &Connection,
+    video: &'a mut VideoEntry,
+    new_watched: bool,
+) -> Option<&'a mut VideoEntry> {
+    let mut query = connection
+        .prepare("UPDATE VIDEOS SET WATCHED = @watched WHERE ID = @id")
+        .expect("Query Failed");
+    query
+        .execute(named_params! {
+            "@watched": new_watched,
+            "@id": video.id
+        })
+        .expect("Execute failed");
+    Some(video)
+}

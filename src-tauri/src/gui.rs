@@ -139,3 +139,24 @@ pub fn update_rating(
         error: None,
     })
 }
+
+pub(crate) fn update_watched(
+    connection: &Connection,
+    videos: &mut Vec<VideoEntry>,
+    video: VideoEntry,
+    watched: bool,
+) -> Result<Response<bool>, ()> {
+    videos
+        .iter_mut()
+        .find(|item| item.id == video.id)
+        .and_then(|item| database::update_watched(connection, item, watched))
+        .and_then(|item| {
+            item.set_watched(watched);
+            Some(())
+        });
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(watched),
+        error: None,
+    })
+}
