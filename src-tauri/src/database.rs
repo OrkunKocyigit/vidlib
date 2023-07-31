@@ -144,9 +144,9 @@ pub(crate) fn update_watched<'a>(
     Some(video)
 }
 
-pub(crate) fn add_video_cache<P: AsRef<Path>>(
+pub(crate) fn add_video_cache(
     connection: &Connection,
-    path: &P,
+    path: &String,
     size: &u64,
     id: &String,
 ) -> () {
@@ -155,20 +155,20 @@ pub(crate) fn add_video_cache<P: AsRef<Path>>(
         .expect("Query Failed");
     query
         .execute(named_params! {
-            "@path": path.as_ref().display().to_string(),
+            "@path": path,
             "@size": size,
             "@id": id
         })
         .expect("Execute failed");
 }
 
-pub(crate) fn delete_video_cache<P: AsRef<Path>>(connection: &Connection, path: &P) -> () {
+pub(crate) fn delete_video_cache(connection: &Connection, path: &String) -> () {
     let mut query = connection
         .prepare("DELETE FROM VIDEO_CACHE WHERE path = @path")
         .expect("Query Failed");
     query
         .execute(named_params! {
-            "@path": path.as_ref().display().to_string(),
+            "@path": path,
         })
         .expect("Execute failed");
 }

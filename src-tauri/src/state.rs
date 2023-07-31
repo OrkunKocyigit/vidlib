@@ -62,16 +62,42 @@ impl ThumbnailEntry {
 
 pub struct VideoCache {
     items: HashMap<String, VideoCacheItem>,
+    add: HashMap<String, VideoCacheItem>,
+    delete: Vec<String>,
 }
 
 impl VideoCache {
     pub fn new() -> Self {
         Self {
             items: HashMap::new(),
+            add: HashMap::new(),
+            delete: Vec::new(),
         }
+    }
+
+    pub fn add_video<P: AsRef<Path>>(&mut self, p: P, v: VideoCacheItem) {
+        let _ = &self.add.insert(p.as_ref().display().to_string(), v);
+    }
+
+    pub fn delete_video<P: AsRef<Path>>(&mut self, p: P) {
+        let _ = &self.delete.push(p.as_ref().display().to_string());
+    }
+
+    pub fn commit(&mut self, connection: &Connection) {
+        for p in &self.delete {
+            database::delete_video_cache(connection, p);
+            let _ = &self.items.remove(p);
+        }
+        let _ = &self.delete.clear();
+        for (p, v) in &self.add {
+            database::add_video_cache(connection, p, &v.filesize, &v.id);
+            let _ = &self.items.insert(p.clone(), v.clone());
+        }
+        let _ = &self.add.clear();
     }
 }
 
+#[derive(Clone)]
 pub struct VideoCacheItem {
     filesize: u64,
     id: String,
