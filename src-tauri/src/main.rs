@@ -4,7 +4,8 @@
 use std::path::PathBuf;
 
 use gstreamer::init;
-use tauri::{Error, Manager, State};
+use serde::Serialize;
+use tauri::{AppHandle, Error, Manager, State};
 
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
@@ -95,6 +96,7 @@ fn set_video_rating(
 
 #[tauri::command]
 fn set_watched(
+    app: AppHandle,
     state: State<AppState>,
     file: VideoFile,
     watched: bool,
@@ -103,12 +105,25 @@ fn set_watched(
     let connection = connection_guard.as_ref().unwrap();
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
+    let _ = app.emit_all(
+        "update_watch",
+        EmitWatched {
+            id: file.id.clone(),
+            watched,
+        },
+    );
     gui::update_watched(connection, videos, file, watched)
 }
 
 #[tauri::command]
 fn open_video(video: VideoFile) -> () {
     opener::open(video.path()).unwrap();
+}
+
+#[derive(Clone, Serialize)]
+struct EmitWatched {
+    id: String,
+    watched: bool,
 }
 
 fn main() {

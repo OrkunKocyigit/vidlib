@@ -1,9 +1,10 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { Box, Flex, Group, ThemeIcon, UnstyledButton } from '@mantine/core';
 import { IconVideo } from '@tabler/icons-react';
 import { type IVideoContext, VideoContext } from '../entities/VideoContext';
 import useStyles, { type VideoFileViewVariants } from './VideoFileView.styles';
+import { listen } from '@tauri-apps/api/event';
 
 export interface VideoFileViewProps extends React.ComponentPropsWithoutRef<'div'> {
   video: VideoFile;
@@ -16,7 +17,28 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
     },
     [props.video.watched]
   );
-  const { classes } = useStyles({ variant: getVariant(props.video.watched) });
+  useEffect(() => {
+    const unlisten = listen(
+      'update_watch',
+      ({ payload }: { payload: { id: string; watched: boolean } }) => {
+        if (payload.id === props.video.id) {
+          props.video.watched = payload.watched;
+          setVariant(getVariant(payload.watched));
+        }
+      }
+    );
+    return () => {
+      unlisten
+        .then((value) => {
+          value();
+        })
+        .catch((reason) => {
+          console.error(reason);
+        });
+    };
+  }, []);
+  const [variant, setVariant] = useState(getVariant(props.video.watched));
+  const { classes } = useStyles({ variant });
 
   function updateVideo(): void {
     if (videoContext.setVideo != null) {
