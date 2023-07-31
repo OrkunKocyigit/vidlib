@@ -21,7 +21,6 @@ pub struct VideoCategory {
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct VideoEntry {
-    pub id: String,
     name: String,
     rating: usize,
     notes: String,
@@ -30,9 +29,8 @@ pub struct VideoEntry {
 }
 
 impl VideoEntry {
-    pub fn new(id: String, name: String, rating: usize, notes: String, watched: bool) -> Self {
+    pub fn new(name: String, rating: usize, notes: String, watched: bool) -> Self {
         Self {
-            id,
             name,
             rating,
             notes,

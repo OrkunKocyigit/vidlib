@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use native_dialog::FileDialog;
@@ -66,26 +67,15 @@ pub fn get_folders(
 
 pub fn get_video(
     video: &mut VideoFile,
-    videos: &mut Vec<VideoEntry>,
+    videos: &mut HashMap<String, VideoEntry>,
     connection: &Connection,
 ) -> Result<Response<VideoFile>, ()> {
-    let mut iter = videos.iter();
-    let video_entry = match iter.find(|&item| item.id == video.id) {
-        Some(video) => video.clone(),
-        _ => {
-            let new_video = VideoEntry::new(
-                video.id.clone(),
-                video.name().clone().to_string(),
-                0,
-                "".to_string(),
-                false,
-            );
-            database::add_video(connection, &new_video).expect("Add video failed");
-            videos.push(new_video);
-            videos.last().unwrap().clone()
-        }
-    };
-    video.set_video(Some(video_entry));
+    let e = videos.entry(video.id.clone()).or_insert_with(|| {
+        let new_video = VideoEntry::new(video.name().clone().to_string(), 0, "".to_string(), false);
+        database::add_video(connection, &video.id, &new_video).expect("Add video failed");
+        new_video
+    });
+    video.set_video(Some(e.clone()));
     Ok(Response {
         result: ResponseType::SUCCESS,
         response: Some(video.clone()),
@@ -124,18 +114,14 @@ fn get_thumbnails(video: VideoFile, thumbnail_cache: &mut ThumbnailCache) -> Vec
 
 pub fn update_rating(
     connection: &Connection,
-    videos: &mut Vec<VideoEntry>,
-    video: VideoEntry,
+    videos: &mut HashMap<String, VideoEntry>,
+    video: VideoFile,
     new_rating: usize,
 ) -> Result<Response<usize>, ()> {
-    videos
-        .iter_mut()
-        .find(|item| item.id == video.id)
-        .and_then(|item| database::update_rating(connection, item, new_rating))
-        .and_then(|item| {
-            item.set_rating(new_rating);
-            Some(())
-        });
+    videos.get_mut(&video.id).and_then(|v| {
+        v.set_rating(new_rating);
+        database::update_rating(connection, &video.id, new_rating)
+    });
     Ok(Response {
         result: ResponseType::SUCCESS,
         response: Some(new_rating),
@@ -145,18 +131,14 @@ pub fn update_rating(
 
 pub(crate) fn update_watched(
     connection: &Connection,
-    videos: &mut Vec<VideoEntry>,
-    video: VideoEntry,
+    videos: &mut HashMap<String, VideoEntry>,
+    video: VideoFile,
     watched: bool,
 ) -> Result<Response<bool>, ()> {
-    videos
-        .iter_mut()
-        .find(|item| item.id == video.id)
-        .and_then(|item| database::update_watched(connection, item, watched))
-        .and_then(|item| {
-            item.set_watched(watched);
-            Some(())
-        });
+    videos.get_mut(&video.id).and_then(|v| {
+        v.set_watched(watched);
+        database::update_watched(connection, &video.id, watched)
+    });
     Ok(Response {
         result: ResponseType::SUCCESS,
         response: Some(watched),

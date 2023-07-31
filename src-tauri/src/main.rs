@@ -10,7 +10,6 @@ use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::Response;
 use crate::state::AppState;
-use crate::video::VideoEntry;
 
 mod database;
 mod filescan;
@@ -67,8 +66,7 @@ fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<Vi
     let videos = videos_guard.as_mut().unwrap();
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
-    let response = gui::get_video(&mut video, videos, connection);
-    return response;
+    gui::get_video(&mut video, videos, connection)
 }
 
 #[tauri::command]
@@ -81,27 +79,27 @@ fn get_thumbnail(state: State<AppState>, video: VideoFile) -> Result<Response<Ve
 #[tauri::command]
 fn set_video_rating(
     state: State<AppState>,
-    video: VideoEntry,
+    file: VideoFile,
     rating: usize,
 ) -> Result<Response<usize>, ()> {
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
-    gui::update_rating(connection, videos, video, rating)
+    gui::update_rating(connection, videos, file, rating)
 }
 
 #[tauri::command]
 fn set_watched(
     state: State<AppState>,
-    video: VideoEntry,
+    file: VideoFile,
     watched: bool,
 ) -> Result<Response<bool>, ()> {
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
-    gui::update_watched(connection, videos, video, watched)
+    gui::update_watched(connection, videos, file, watched)
 }
 
 #[tauri::command]

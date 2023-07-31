@@ -1,7 +1,6 @@
 import { Group, Rating, Text } from '@mantine/core';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { useEffect, useState } from 'react';
-import { type VideoEntry } from '../../../entities/VideoEntry';
 import { SetRating } from '../../../service/SetRating';
 
 interface VideoRatingProps {
@@ -17,7 +16,7 @@ function VideoRating(props: VideoRatingProps): JSX.Element {
     }
   }, [props.video?.video]);
 
-  function updateVideoRating(video: VideoEntry, newRating: number): void {
+  function updateVideoRating(video: VideoFile, newRating: number): void {
     SetRating(video, newRating)
       .then((value) => {
         setRating(value.response);
@@ -32,9 +31,7 @@ function VideoRating(props: VideoRatingProps): JSX.Element {
       {props.video?.video != null ? (
         <>
           <Text>Rating: </Text>
-          <Rating
-            value={rating}
-            onChange={updateVideoRating.bind(null, props.video.video)}></Rating>
+          <Rating value={rating} onChange={updateVideoRating.bind(null, props.video)}></Rating>
         </>
       ) : null}
     </Group>

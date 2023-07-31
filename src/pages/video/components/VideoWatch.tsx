@@ -19,7 +19,7 @@ function VideoWatch(props: VideoWatchProps): JSX.Element {
 
   function updateWatched(video: VideoFile, value: boolean): void {
     if (video.video != null) {
-      SetWatched(video.video, value)
+      SetWatched(video, value)
         .then((newWatched) => {
           setWatched(newWatched.response);
         })

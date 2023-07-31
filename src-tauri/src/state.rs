@@ -123,7 +123,7 @@ impl VideoCacheItem {
 
 pub struct AppState {
     pub db: Mutex<Option<Connection>>,
-    pub videos: Mutex<Option<Vec<VideoEntry>>>,
+    pub videos: Mutex<Option<HashMap<String, VideoEntry>>>,
     pub thumbnail_cache: Mutex<Option<ThumbnailCache>>,
     pub video_cache: Mutex<Option<VideoCache>>,
 }

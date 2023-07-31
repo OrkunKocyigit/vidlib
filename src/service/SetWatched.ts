@@ -1,13 +1,13 @@
 import { type IServiceResponse, ServiceResponse } from './ServiceResponse';
 import { invoke } from '@tauri-apps/api';
-import { type VideoEntry } from '../entities/VideoEntry';
+import { type VideoFile } from '../entities/VideoFile';
 
 export async function SetWatched(
-  video: VideoEntry,
+  video: VideoFile,
   newWatched: boolean
 ): Promise<ServiceResponse<boolean>> {
   return await invoke<IServiceResponse<boolean>>('set_watched', {
-    video,
+    file: video,
     watched: newWatched
   }).then((value) => {
     const { error, result, response } = value;
