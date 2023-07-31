@@ -1,16 +1,22 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext } from 'react';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { Box, Flex, Group, ThemeIcon, UnstyledButton } from '@mantine/core';
 import { IconVideo } from '@tabler/icons-react';
 import { type IVideoContext, VideoContext } from '../entities/VideoContext';
-import useStyles from './VideoFileView.styles';
+import useStyles, { type VideoFileViewVariants } from './VideoFileView.styles';
 
 export interface VideoFileViewProps extends React.ComponentPropsWithoutRef<'div'> {
   video: VideoFile;
 }
 function VideoFileView(props: VideoFileViewProps): JSX.Element {
   const videoContext = useContext<IVideoContext>(VideoContext);
-  const { classes } = useStyles();
+  const getVariant = useCallback(
+    (watched?: boolean): VideoFileViewVariants => {
+      return watched === true ? 'watched' : undefined;
+    },
+    [props.video.watched]
+  );
+  const { classes } = useStyles({ variant: getVariant(props.video.watched) });
 
   function updateVideo(): void {
     if (videoContext.setVideo != null) {
