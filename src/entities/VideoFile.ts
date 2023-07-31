@@ -15,4 +15,8 @@ export class VideoFile extends FileInfo implements IVideoFile {
     this.id = id;
     this.video = video;
   }
+
+  get displayName(): string {
+    return this.name;
+  }
 }
