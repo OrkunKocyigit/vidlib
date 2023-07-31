@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{read_dir, File};
 use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
@@ -19,6 +20,7 @@ pub struct VideoFile {
     name: String,
     depth: usize,
     video: Option<VideoEntry>,
+    watched: bool,
 }
 
 impl VideoFile {
@@ -32,6 +34,7 @@ impl VideoFile {
             name,
             depth,
             video: None,
+            watched: false,
         }
     }
 
@@ -124,6 +127,16 @@ impl VideoFile {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
+
+    pub fn set_watched(&mut self, watched: bool) {
+        self.watched = watched;
+    }
+
+    pub(crate) fn update_meta(&mut self, p0: Option<&VideoEntry>) {
+        if let Some(e) = p0 {
+            let _ = &self.set_watched(e.watched());
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -177,6 +190,14 @@ impl FolderInfo {
                 self.empty = false;
             }
         }
+    }
+
+    pub(crate) fn add_meta(&mut self, p0: &HashMap<String, VideoEntry>) {
+        let _ = &self
+            .videos
+            .iter_mut()
+            .for_each(|v| v.update_meta(p0.get(&v.id)));
+        let _ = &self.folders.iter_mut().for_each(|f| f.add_meta(p0));
     }
 }
 

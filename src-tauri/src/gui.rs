@@ -10,15 +10,22 @@ use crate::service::{Response, ResponseType};
 use crate::state::{ThumbnailCache, ThumbnailEntry, VideoCache};
 use crate::video::VideoEntry;
 
-pub fn file_scan(path: String, cache: &mut VideoCache) -> Result<Response<FolderInfo>, ()> {
+pub fn file_scan(
+    path: String,
+    cache: &mut VideoCache,
+    x: &HashMap<String, VideoEntry>,
+) -> Result<Response<FolderInfo>, ()> {
     let mut scan = FileScan::new(Path::new(path.as_str()), Some(cache));
     let result = scan.run();
     let response = match result {
-        Ok(folder_info) => Response {
-            result: ResponseType::SUCCESS,
-            response: Some(folder_info),
-            error: None,
-        },
+        Ok(mut folder_info) => {
+            folder_info.add_meta(x);
+            Response {
+                result: ResponseType::SUCCESS,
+                response: Some(folder_info),
+                error: None,
+            }
+        }
         Err(error) => Response {
             result: ResponseType::FAILURE,
             response: None,
@@ -48,13 +55,15 @@ pub fn select_folder() -> Result<Response<PathBuf>, ()> {
 pub fn get_folders(
     folders: &Vec<String>,
     cache: &mut VideoCache,
+    entries: &HashMap<String, VideoEntry>,
 ) -> Result<Response<Vec<FolderInfo>>, ()> {
     let mut folder_infos = Vec::new();
     for folder in folders.into_iter() {
         let path = Path::new(&folder);
         let mut scan = FileScan::new(path, Some(cache));
         let folder_scan = scan.run();
-        if let Ok(folder_info) = folder_scan {
+        if let Ok(mut folder_info) = folder_scan {
+            folder_info.add_meta(entries);
             folder_infos.push(folder_info);
         }
     }

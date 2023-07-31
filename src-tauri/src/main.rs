@@ -22,7 +22,7 @@ mod video;
 fn file_scan(state: State<AppState>, path: String) -> Result<Response<FolderInfo>, ()> {
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
-    let response = gui::file_scan(path, cache);
+    let response = gui::file_scan(path, cache, state.videos.lock().unwrap().as_ref().unwrap());
     cache.commit(state.db.lock().unwrap().as_ref().unwrap());
     response
 }
@@ -39,7 +39,11 @@ fn get_folders(state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Erro
     let folders = database::get_paths(&db).expect("Paths not found");
     let mut cache_guard = state.video_cache.lock().unwrap();
     let cache = cache_guard.as_mut().unwrap();
-    let response = gui::get_folders(&folders, cache);
+    let response = gui::get_folders(
+        &folders,
+        cache,
+        state.videos.lock().unwrap().as_ref().unwrap(),
+    );
     cache.commit(db);
     if response.is_ok() {
         Ok(response.unwrap())
@@ -55,7 +59,7 @@ fn add_folder(state: State<AppState>, path: String) -> Result<Response<FolderInf
     database::add_path(db, &path).expect("Paths not found");
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
-    let response = gui::file_scan(path, cache);
+    let response = gui::file_scan(path, cache, state.videos.lock().unwrap().as_ref().unwrap());
     cache.commit(db);
     response
 }

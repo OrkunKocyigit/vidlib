@@ -11,7 +11,7 @@ export async function GetVideo(video: VideoFile): Promise<ServiceResponse<VideoF
     const iVideo = response as IVideoFile;
     return new ServiceResponse(
       result,
-      new VideoFile(iVideo.depth, iVideo.name, iVideo.path, iVideo.id, iVideo.video)
+      new VideoFile(iVideo.depth, iVideo.name, iVideo.path, iVideo.id, iVideo.watched, iVideo.video)
     );
   });
 }
