@@ -3,6 +3,7 @@ use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
+use crate::state::VideoCache;
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
@@ -167,14 +168,16 @@ impl FolderInfo {
     }
 }
 
-pub struct FileScan {
+pub struct FileScan<'a> {
     pub path: PathBuf,
+    cache: Option<&'a mut VideoCache>,
 }
 
-impl FileScan {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+impl<'a> FileScan<'a> {
+    pub fn new<P: AsRef<Path>>(path: P, cache: Option<&'a mut VideoCache>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
+            cache,
         }
     }
 

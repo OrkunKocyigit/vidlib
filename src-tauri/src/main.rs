@@ -20,8 +20,10 @@ mod state;
 mod video;
 
 #[tauri::command]
-fn file_scan(path: String) -> Result<Response<FolderInfo>, ()> {
-    gui::file_scan(path)
+fn file_scan(state: State<AppState>, path: String) -> Result<Response<FolderInfo>, ()> {
+    let mut guard = state.video_cache.lock().unwrap();
+    let cache = guard.as_mut().unwrap();
+    gui::file_scan(path, cache)
 }
 
 #[tauri::command]
@@ -47,7 +49,9 @@ fn add_folder(state: State<AppState>, path: String) -> Result<Response<FolderInf
     let db_guard = state.db.lock().unwrap();
     let db = db_guard.as_ref().unwrap();
     database::add_path(db, &path).expect("Paths not found");
-    gui::file_scan(path)
+    let mut guard = state.video_cache.lock().unwrap();
+    let cache = guard.as_mut().unwrap();
+    gui::file_scan(path, cache)
 }
 
 #[tauri::command]
