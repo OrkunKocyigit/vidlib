@@ -10,7 +10,7 @@ use crate::state::{ThumbnailCache, ThumbnailEntry, VideoCache};
 use crate::video::VideoEntry;
 
 pub fn file_scan(path: String, cache: &mut VideoCache) -> Result<Response<FolderInfo>, ()> {
-    let scan = FileScan::new(Path::new(path.as_str()), Some(cache));
+    let mut scan = FileScan::new(Path::new(path.as_str()), Some(cache));
     let result = scan.run();
     let response = match result {
         Ok(folder_info) => Response {
@@ -44,11 +44,14 @@ pub fn select_folder() -> Result<Response<PathBuf>, ()> {
     Ok(response)
 }
 
-pub fn get_folders(folders: &Vec<String>) -> Result<Response<Vec<FolderInfo>>, ()> {
+pub fn get_folders(
+    folders: &Vec<String>,
+    cache: &mut VideoCache,
+) -> Result<Response<Vec<FolderInfo>>, ()> {
     let mut folder_infos = Vec::new();
     for folder in folders.into_iter() {
         let path = Path::new(&folder);
-        let scan = FileScan::new(path, None);
+        let mut scan = FileScan::new(path, Some(cache));
         let folder_scan = scan.run();
         if let Ok(folder_info) = folder_scan {
             folder_infos.push(folder_info);

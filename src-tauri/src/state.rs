@@ -75,6 +75,11 @@ impl VideoCache {
         }
     }
 
+    pub fn get_video(&self, p: &PathBuf) -> Option<&VideoCacheItem> {
+        let p = p.display().to_string();
+        self.items.get(&p)
+    }
+
     pub fn add_video<P: AsRef<Path>>(&mut self, p: P, v: VideoCacheItem) {
         let _ = &self.add.insert(p.as_ref().display().to_string(), v);
     }
@@ -106,6 +111,13 @@ pub struct VideoCacheItem {
 impl VideoCacheItem {
     pub fn new(filesize: u64, id: String) -> Self {
         Self { filesize, id }
+    }
+
+    pub fn filesize(&self) -> u64 {
+        self.filesize
+    }
+    pub fn id(&self) -> &str {
+        &self.id
     }
 }
 

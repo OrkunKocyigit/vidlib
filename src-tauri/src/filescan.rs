@@ -3,10 +3,10 @@ use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
-use crate::state::VideoCache;
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
+use crate::state::{VideoCache, VideoCacheItem};
 use crate::video;
 use crate::video::{is_video, VideoEntry};
 
@@ -22,10 +22,10 @@ pub struct VideoFile {
 }
 
 impl VideoFile {
-    pub fn new<P: AsRef<Path>>(path: P, depth: usize) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P, depth: usize, c: &mut Option<&mut VideoCache>) -> Self {
         let path_ref = path.as_ref().to_owned();
         let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
-        let hash = VideoFile::hash_file(&path_ref);
+        let hash = VideoFile::hash_file(&path_ref, c);
         Self {
             id: hash,
             path: path_ref,
@@ -35,9 +35,18 @@ impl VideoFile {
         }
     }
 
-    fn hash_file(path_ref: &PathBuf) -> String {
+    fn hash_file(path_ref: &PathBuf, c: &mut Option<&mut VideoCache>) -> String {
         let file = File::open(path_ref).expect("Failed to open file");
         let file_size = file.metadata().expect("Failed to get file metadata").len();
+        // Check we can use cached data first
+        if let Some(v) = c.as_ref().and_then(|c| c.get_video(path_ref)) {
+            if file_size == v.filesize() {
+                return v.id().into();
+            } else {
+                c.as_mut().and_then(|c| Some(c.delete_video(path_ref)));
+            }
+        }
+
         let mut reader = BufReader::new(file);
         let mut hasher = Xxh3::new();
         let mut buffer = [0; 1024];
@@ -81,7 +90,10 @@ impl VideoFile {
             }
         }
 
-        format!("{:x}", hasher.finish())
+        let id = format!("{:x}", hasher.finish());
+        c.as_mut()
+            .and_then(|c| Some(c.add_video(path_ref, VideoCacheItem::new(file_size, id.clone()))));
+        id
     }
 
     pub fn name(&self) -> &str {
@@ -146,7 +158,7 @@ impl FolderInfo {
         self.videos.push(video);
     }
 
-    pub fn read_folder(&mut self) {
+    pub fn read_folder(&mut self, c: &mut Option<&mut VideoCache>) {
         let dir = read_dir(&self.path).unwrap();
         for entry in dir {
             let path = match entry {
@@ -155,12 +167,12 @@ impl FolderInfo {
             };
             if path.is_file() {
                 if is_video(&path) {
-                    self.push_video(VideoFile::new(path, self.depth));
+                    self.push_video(VideoFile::new(path, self.depth, c));
                     self.empty = false;
                 }
             } else if path.is_dir() {
                 let mut folder = FolderInfo::new(path, self.depth + 1);
-                folder.read_folder();
+                folder.read_folder(c);
                 self.push_folder(folder);
                 self.empty = false;
             }
@@ -181,14 +193,14 @@ impl<'a> FileScan<'a> {
         }
     }
 
-    pub fn run(&self) -> Result<FolderInfo, &str> {
+    pub fn run(&mut self) -> Result<FolderInfo, &str> {
         let is_dir = &self.path.is_dir();
         if !is_dir {
             return Err("Invalid path");
         }
 
         let mut root = FolderInfo::new(&self.path, 0);
-        root.read_folder();
+        root.read_folder(&mut self.cache);
 
         Ok(root)
     }

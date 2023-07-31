@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
 
 use rusqlite::{named_params, Connection, Error};
 use tauri::AppHandle;

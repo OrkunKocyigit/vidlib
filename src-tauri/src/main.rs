@@ -23,7 +23,9 @@ mod video;
 fn file_scan(state: State<AppState>, path: String) -> Result<Response<FolderInfo>, ()> {
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
-    gui::file_scan(path, cache)
+    let response = gui::file_scan(path, cache);
+    cache.commit(state.db.lock().unwrap().as_ref().unwrap());
+    response
 }
 
 #[tauri::command]
@@ -36,7 +38,10 @@ fn get_folders(state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Erro
     let db_guard = state.db.lock().unwrap();
     let db = db_guard.as_ref().unwrap();
     let folders = database::get_paths(&db).expect("Paths not found");
-    let response = gui::get_folders(&folders);
+    let mut cache_guard = state.video_cache.lock().unwrap();
+    let cache = cache_guard.as_mut().unwrap();
+    let response = gui::get_folders(&folders, cache);
+    cache.commit(db);
     if response.is_ok() {
         Ok(response.unwrap())
     } else {
@@ -51,7 +56,9 @@ fn add_folder(state: State<AppState>, path: String) -> Result<Response<FolderInf
     database::add_path(db, &path).expect("Paths not found");
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
-    gui::file_scan(path, cache)
+    let response = gui::file_scan(path, cache);
+    cache.commit(db);
+    response
 }
 
 #[tauri::command]
