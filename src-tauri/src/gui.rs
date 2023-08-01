@@ -7,7 +7,7 @@ use rusqlite::Connection;
 use crate::database;
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
-use crate::state::{ThumbnailCache, ThumbnailEntry, VideoCache};
+use crate::state::{ThumbnailCache, VideoCache};
 use crate::video::VideoEntry;
 
 pub fn file_scan(
@@ -114,19 +114,14 @@ fn get_thumbnails(
     video: VideoFile,
     thumbnail_cache: &mut ThumbnailCache,
 ) -> Result<Vec<PathBuf>, anyhow::Error> {
-    let id = video.id.clone();
-    let thumbnails = thumbnail_cache.thumbnails();
-    match thumbnails.iter().position(|thumbnail| thumbnail.id == id) {
-        Some(index) => Ok(thumbnails[index].paths().to_owned()),
-        _ => {
-            let thumbnail_paths = video.create_thumbnails(video.path())?;
-            let mut entry = ThumbnailEntry::new(id.as_str());
-            thumbnail_paths
-                .iter()
-                .for_each(|path| entry.add_video(path));
-            thumbnail_cache.add_video(entry);
-            Ok(thumbnail_paths)
-        }
+    if let Some(e) = thumbnail_cache.get_paths(&video.id) {
+        Ok(e.clone())
+    } else {
+        let thumbnail_paths = video.create_thumbnails(thumbnail_cache.base_dir())?;
+        thumbnail_paths
+            .iter()
+            .for_each(|path| thumbnail_cache.add_thumbnail_entry(&video.id, path));
+        Ok(thumbnail_paths)
     }
 }
 

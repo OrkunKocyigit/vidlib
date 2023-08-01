@@ -12,43 +12,42 @@ use crate::database;
 use crate::video::VideoEntry;
 
 pub struct ThumbnailCache {
-    path: PathBuf,
-    thumbnails: Vec<ThumbnailEntry>,
+    base_dir: PathBuf,
+    thumbnails: HashMap<String, ThumbnailEntry>,
 }
 
 impl ThumbnailCache {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+    pub fn new<P: AsRef<Path>>(base_dir: P) -> Self {
         Self {
-            path: path.as_ref().to_path_buf(),
-            thumbnails: Vec::new(),
+            base_dir: base_dir.as_ref().to_path_buf(),
+            thumbnails: HashMap::new(),
         }
     }
 
-    pub fn path(&self) -> &PathBuf {
-        &self.path
+    pub fn base_dir(&self) -> &PathBuf {
+        &self.base_dir
     }
 
-    pub fn thumbnails(&self) -> &Vec<ThumbnailEntry> {
-        &self.thumbnails
+    pub fn add_thumbnail_entry(&mut self, id: &String, path: &PathBuf) {
+        self.thumbnails
+            .entry(id.clone())
+            .or_insert_with(|| ThumbnailEntry::new())
+            .add_video(path)
     }
 
-    pub fn add_video(&mut self, entry: ThumbnailEntry) {
-        let _ = &self.thumbnails.push(entry);
+    pub fn get_paths(&self, id: &String) -> Option<&Vec<PathBuf>> {
+        self.thumbnails.get(id).map(|t| t.paths())
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ThumbnailEntry {
-    pub id: String,
     paths: Vec<PathBuf>,
 }
 
 impl ThumbnailEntry {
-    pub fn new(id: &str) -> Self {
-        Self {
-            id: id.to_string(),
-            paths: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { paths: Vec::new() }
     }
 
     pub fn add_video(&mut self, path: &PathBuf) {
@@ -146,18 +145,7 @@ pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
                 let mut split = file_name.split("_");
                 let id = split.next().unwrap();
                 let path = dir_entry.path();
-                match thumbnail_cache
-                    .thumbnails
-                    .iter()
-                    .position(|thumb| thumb.id.as_str() == id)
-                {
-                    Some(index) => thumbnail_cache.thumbnails[index].add_video(&path),
-                    _ => {
-                        let mut entry = ThumbnailEntry::new(id);
-                        entry.add_video(&path);
-                        thumbnail_cache.thumbnails.push(entry);
-                    }
-                }
+                thumbnail_cache.add_thumbnail_entry(&id.to_string(), &path);
             }
         }
     }
