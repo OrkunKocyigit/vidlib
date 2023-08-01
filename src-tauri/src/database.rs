@@ -166,3 +166,14 @@ pub(crate) fn get_video_cache_items(
     })?;
     Ok(rows.collect::<Result<HashMap<_, _>, _>>()?)
 }
+
+pub(crate) fn update_name(c: &Connection, i: &String, n: &String) -> Option<()> {
+    c.prepare("UPDATE VIDEOS SET NAME = @name WHERE ID = @id")
+        .expect("Query Failed")
+        .execute(named_params! {
+            "@name": n,
+            "@id": i
+        })
+        .expect("Execute failed");
+    Some(())
+}

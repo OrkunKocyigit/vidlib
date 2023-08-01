@@ -158,3 +158,20 @@ pub(crate) fn update_watched(
         error: None,
     })
 }
+
+pub(crate) fn update_name(
+    c: &Connection,
+    v: &mut HashMap<String, VideoEntry>,
+    f: &VideoFile,
+    n: &String,
+) -> Result<Response<String>, ()> {
+    v.get_mut(&f.id).and_then(|e| {
+        e.set_name(n.to_owned());
+        database::update_name(c, &f.id, n)
+    });
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(n.to_owned()),
+        error: None,
+    })
+}

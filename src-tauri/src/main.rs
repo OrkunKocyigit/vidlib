@@ -116,6 +116,20 @@ fn set_watched(
 }
 
 #[tauri::command]
+fn set_video_name(
+    state: State<AppState>,
+    file: VideoFile,
+    name: String,
+) -> Result<Response<String>, ()> {
+    gui::update_name(
+        state.db.lock().unwrap().as_ref().unwrap(),
+        state.videos.lock().unwrap().as_mut().unwrap(),
+        &file,
+        &name,
+    )
+}
+
+#[tauri::command]
 fn open_video(video: VideoFile) -> () {
     opener::open(video.path()).unwrap();
 }
@@ -144,7 +158,8 @@ fn main() {
             get_thumbnail,
             set_video_rating,
             set_watched,
-            open_video
+            open_video,
+            set_video_name
         ])
         .setup(|app| {
             let handle = app.handle();

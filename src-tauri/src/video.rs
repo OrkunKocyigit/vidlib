@@ -59,6 +59,10 @@ impl VideoEntry {
     pub fn set_watched(&mut self, watched: bool) {
         self.watched = watched;
     }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
 }
 
 #[derive(Debug, Display, Error)]
