@@ -96,27 +96,36 @@ pub fn get_thumbnail(
     video: VideoFile,
     thumbnail_cache: &mut ThumbnailCache,
 ) -> Result<Response<Vec<PathBuf>>, ()> {
-    let thumbnails = get_thumbnails(video, thumbnail_cache);
-    Ok(Response {
-        result: ResponseType::SUCCESS,
-        response: Some(thumbnails),
-        error: None,
-    })
+    match get_thumbnails(video, thumbnail_cache) {
+        Ok(r) => Ok(Response {
+            result: ResponseType::SUCCESS,
+            response: Some(r),
+            error: None,
+        }),
+        Err(r) => Ok(Response {
+            result: ResponseType::SUCCESS,
+            response: None,
+            error: Some(r.to_string()),
+        }),
+    }
 }
 
-fn get_thumbnails(video: VideoFile, thumbnail_cache: &mut ThumbnailCache) -> Vec<PathBuf> {
+fn get_thumbnails(
+    video: VideoFile,
+    thumbnail_cache: &mut ThumbnailCache,
+) -> Result<Vec<PathBuf>, anyhow::Error> {
     let id = video.id.clone();
     let thumbnails = thumbnail_cache.thumbnails();
     match thumbnails.iter().position(|thumbnail| thumbnail.id == id) {
-        Some(index) => thumbnails[index].paths().to_owned(),
+        Some(index) => Ok(thumbnails[index].paths().to_owned()),
         _ => {
+            let thumbnail_paths = video.create_thumbnails(video.path())?;
             let mut entry = ThumbnailEntry::new(id.as_str());
-            let thumbnail_paths: Vec<PathBuf> = video.create_thumbnails(thumbnail_cache.path());
             thumbnail_paths
                 .iter()
                 .for_each(|path| entry.add_video(path));
             thumbnail_cache.add_video(entry);
-            thumbnail_paths
+            Ok(thumbnail_paths)
         }
     }
 }
