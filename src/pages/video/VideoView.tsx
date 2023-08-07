@@ -4,6 +4,7 @@ import { Flex, LoadingOverlay } from '@mantine/core';
 import VideoHeader from './components/VideoHeader';
 import { useDisclosure } from '@mantine/hooks';
 import { GetVideo } from '../../service/GetVideo';
+import VideoMetadata from './components/VideoMetadataView';
 
 export interface VideoViewProps {
   video?: VideoFile;
@@ -33,6 +34,7 @@ const VideoView = function (props: VideoViewProps): JSX.Element {
       {videoFile != null ? (
         <>
           <VideoHeader video={videoFile}></VideoHeader>
+          <VideoMetadata video={videoFile}></VideoMetadata>
         </>
       ) : null}
     </Flex>
