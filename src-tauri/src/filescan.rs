@@ -4,12 +4,13 @@ use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
+use anyhow::Error;
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
 use crate::state::{VideoCache, VideoCacheItem};
 use crate::video;
-use crate::video::{is_video, VideoEntry};
+use crate::video::{is_video, VideoEntry, VideoMetadata};
 
 const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
 
@@ -131,6 +132,11 @@ impl VideoFile {
         if let Some(e) = p0 {
             let _ = &self.set_watched(e.watched());
         }
+    }
+
+    pub(crate) async fn get_metadata(&self) -> Result<VideoMetadata, Error> {
+        let video_url = url::Url::from_file_path(&self.path).expect("Video can't be opened");
+        video::create_metadata(video_url).await
     }
 }
 

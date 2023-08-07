@@ -8,7 +8,7 @@ use crate::database;
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
 use crate::state::{ThumbnailCache, VideoCache};
-use crate::video::VideoEntry;
+use crate::video::{VideoEntry, VideoMetadata};
 
 pub fn file_scan(
     path: String,
@@ -174,4 +174,20 @@ pub(crate) fn update_name(
         response: Some(n.to_owned()),
         error: None,
     })
+}
+
+pub(crate) async fn get_metadata(v: &VideoFile) -> Result<Response<VideoMetadata>, ()> {
+    let metadata = v.get_metadata().await;
+    return match metadata {
+        Ok(m) => Ok(Response {
+            result: ResponseType::SUCCESS,
+            response: Some(m),
+            error: None,
+        }),
+        Err(e) => Ok(Response {
+            result: ResponseType::FAILURE,
+            response: None,
+            error: Some(e.to_string()),
+        }),
+    };
 }

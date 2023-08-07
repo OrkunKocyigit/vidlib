@@ -7,8 +7,10 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::Error;
+use derive_builder::Builder;
 use derive_more::{Display, Error};
 use gstreamer::prelude::*;
+use gstreamer::{ClockTime, MessageType, Pipeline, State};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -90,11 +92,11 @@ pub fn is_video<P: AsRef<Path>>(path: P) -> bool {
 pub fn create_thumbnail_video_pipeline(
     video_url: Url,
     save_path: &PathBuf,
-) -> Result<gst::Pipeline, anyhow::Error> {
+) -> Result<Pipeline, anyhow::Error> {
     let pipeline = gst::parse_launch(&format!(
         "uridecodebin uri={video_url} ! videoconvert ! appsink name=sink"
     ))?
-    .downcast::<gst::Pipeline>()
+    .downcast::<Pipeline>()
     .expect("Video can't be opened");
 
     let appsink = pipeline
@@ -250,4 +252,84 @@ pub fn create_thumbnail(pipeline: gst::Pipeline) -> Result<(), Error> {
     pipeline.set_state(gst::State::Null)?;
 
     Ok(())
+}
+
+#[derive(Builder, Serialize, Deserialize)]
+pub struct VideoMetadata {
+    width: Option<u32>,
+    height: Option<u32>,
+    framerate: Option<String>,
+    filesize: Option<u64>,
+    bitrate: Option<u64>,
+    length: Option<String>,
+    codec: Option<String>,
+    abitrate: Option<u32>,
+    acodec: Option<String>,
+    asample: Option<String>,
+}
+
+pub(crate) async fn create_metadata(url: Url) -> Result<VideoMetadata, Error> {
+    // Create a pipeline to read the file and get its information
+    let pipeline =
+        gstreamer::parse_launch(&format!("filesrc location={} ! decodebin ! fakesink", url))?
+            .downcast::<Pipeline>()
+            .unwrap();
+    let bus = pipeline.bus().unwrap();
+
+    // Set the pipeline to the PAUSED state to get its information
+    pipeline.set_state(State::Paused).unwrap();
+
+    // Wait for the pipeline to preroll
+    bus.timed_pop_filtered(ClockTime::NONE, &[MessageType::AsyncDone])
+        .unwrap();
+
+    // Get the video and audio information from the pipeline
+    let mut video_info = None;
+    let mut audio_info = None;
+    for element_result in pipeline.iterate_elements() {
+        if let Ok(element) = element_result {
+            let pads = element.sink_pads();
+            for pad in pads {
+                if let Some(caps) = pad.caps() {
+                    if caps.structure(0).unwrap().name().starts_with("video") {
+                        video_info =
+                            Some(gstreamer_video::VideoInfo::from_caps(caps.as_ref()).unwrap());
+                    } else if caps.structure(0).unwrap().name().starts_with("audio") {
+                        audio_info =
+                            Some(gstreamer_audio::AudioInfo::from_caps(caps.as_ref()).unwrap());
+                    }
+                }
+            }
+        }
+    }
+
+    let mut m = VideoMetadataBuilder::create_empty();
+    if let Some(video_info) = video_info {
+        m.width(Some(video_info.width()));
+        m.height(Some(video_info.height()));
+        m.framerate(Some(format!(
+            "{}.{}",
+            video_info.fps().numer(),
+            video_info.fps().denom()
+        )));
+        let filesize = url.to_file_path().unwrap().metadata()?.len();
+        m.filesize(Some(filesize));
+        let duration = pipeline.query_duration::<ClockTime>().unwrap().seconds() as f64;
+        let bitrate = (filesize as f64 / duration) as u64;
+        m.bitrate(Some(bitrate));
+        m.length(Some((duration as u64).to_string()));
+        m.codec(Some(video_info.format_info().to_string()));
+    }
+
+    if let Some(audio_info) = audio_info {
+        m.acodec(Some(audio_info.format_info().to_string()));
+        m.abitrate(Some(audio_info.rate()));
+    }
+
+    // Stop the pipeline
+    pipeline.set_state(State::Null).unwrap();
+    match m.build() {
+        Ok(r) => Ok(r),
+        Err(r) => Err(Error::msg(r.to_string())),
+    }
 }

@@ -11,6 +11,7 @@ use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::Response;
 use crate::state::AppState;
+use crate::video::VideoMetadata;
 
 mod database;
 mod filescan;
@@ -134,6 +135,11 @@ fn open_video(video: VideoFile) -> () {
     opener::open(video.path()).unwrap();
 }
 
+#[tauri::command]
+async fn get_metadata(video: VideoFile) -> Result<Response<VideoMetadata>, ()> {
+    gui::get_metadata(&video).await
+}
+
 #[derive(Clone, Serialize)]
 struct EmitWatched {
     id: String,
@@ -159,7 +165,8 @@ fn main() {
             set_video_rating,
             set_watched,
             open_video,
-            set_video_name
+            set_video_name,
+            get_metadata
         ])
         .setup(|app| {
             let handle = app.handle();
