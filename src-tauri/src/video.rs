@@ -7,7 +7,6 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::Error;
-use derive_builder::Builder;
 use derive_more::{Display, Error};
 use gstreamer::prelude::*;
 use gstreamer::{ClockTime, MessageType, Pipeline, State};
@@ -256,28 +255,41 @@ pub fn create_thumbnail(pipeline: gst::Pipeline) -> Result<(), Error> {
 
 #[derive(Builder, Serialize, Deserialize)]
 pub struct VideoMetadata {
+    #[builder(default = "None")]
     width: Option<u32>,
+    #[builder(default = "None")]
     height: Option<u32>,
+    #[builder(default = "None")]
     framerate: Option<String>,
+    #[builder(default = "None")]
     filesize: Option<u64>,
+    #[builder(default = "None")]
     bitrate: Option<u64>,
+    #[builder(default = "None")]
     length: Option<String>,
+    #[builder(default = "None")]
     codec: Option<String>,
+    #[builder(default = "None")]
     abitrate: Option<u32>,
+    #[builder(default = "None")]
     acodec: Option<String>,
+    #[builder(default = "None")]
     asample: Option<String>,
 }
 
 pub(crate) async fn create_metadata(url: Url) -> Result<VideoMetadata, Error> {
     // Create a pipeline to read the file and get its information
     let pipeline =
-        gstreamer::parse_launch(&format!("filesrc location={} ! decodebin ! fakesink", url))?
+        gstreamer::parse_launch(&format!("uridecodebin uri={} ! decodebin ! fakesink", url))?
             .downcast::<Pipeline>()
             .unwrap();
     let bus = pipeline.bus().unwrap();
 
     // Set the pipeline to the PAUSED state to get its information
-    pipeline.set_state(State::Paused).unwrap();
+    match pipeline.set_state(State::Paused) {
+        Ok(_) => (),
+        Err(e) => return Err(Error::msg(e.to_string())),
+    }
 
     // Wait for the pipeline to preroll
     bus.timed_pop_filtered(ClockTime::NONE, &[MessageType::AsyncDone])
@@ -303,7 +315,7 @@ pub(crate) async fn create_metadata(url: Url) -> Result<VideoMetadata, Error> {
         }
     }
 
-    let mut m = VideoMetadataBuilder::create_empty();
+    let mut m = VideoMetadataBuilder::default();
     if let Some(video_info) = video_info {
         m.width(Some(video_info.width()));
         m.height(Some(video_info.height()));
