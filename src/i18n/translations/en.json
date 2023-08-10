@@ -1,0 +1,12 @@
+{
+  "abitrate": "Audio Bit Rate",
+  "acodec": "Audio Codec",
+  "asample": "Audio Sample Rate",
+  "bitrate": "Video Bit Rate",
+  "codec": "Video Codec",
+  "filesize": "Filesize",
+  "framerate": "Framerate",
+  "height": "Height",
+  "length": "Length",
+  "width": "Width"
+}
