@@ -37,7 +37,7 @@ function VideoMetadataView(props: VideoMetadataProps): JSX.Element {
                     </Text>
                   </Grid.Col>
                   <Grid.Col sm={4} className={classes.content}>
-                    {value}
+                    {value != null ? value : t('none')}
                   </Grid.Col>
                 </Grid>
               </Paper>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActionIcon, Box, Group, Text } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { SetWatched } from '../../../service/SetWatched';
+import { useTranslation } from 'react-i18next';
 
 interface VideoWatchProps {
   video: VideoFile;
@@ -10,6 +11,7 @@ interface VideoWatchProps {
 
 function VideoWatch(props: VideoWatchProps): JSX.Element {
   const [watched, setWatched] = useState(props.video?.video?.watched);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (props.video?.video != null) {
@@ -40,7 +42,7 @@ function VideoWatch(props: VideoWatchProps): JSX.Element {
             }}>
             <IconCheck></IconCheck>
           </ActionIcon>
-          <Text>Watched</Text>
+          <Text>{t('video.watch.watched')}</Text>
         </Group>
       ) : (
         <Group>
@@ -51,7 +53,7 @@ function VideoWatch(props: VideoWatchProps): JSX.Element {
             }}>
             <IconX></IconX>
           </ActionIcon>
-          <Text>Not Watched</Text>
+          <Text>{t('video.watch.not.watched')}</Text>
         </Group>
       )}
     </Box>

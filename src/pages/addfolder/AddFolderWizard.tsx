@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import FolderInput from '../../components/FolderInput';
 import { type FolderInfo } from '../../entities/FolderInfo';
 import { AddFolder } from '../../service/AddFolder';
+import { useTranslation } from 'react-i18next';
 
 export interface AddFolderWizardProps {
   onFolderAdd: (folderInfo: FolderInfo) => void;
@@ -10,6 +11,7 @@ export interface AddFolderWizardProps {
 
 function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
   const [path, setPath] = useState<string>('');
+  const { t } = useTranslation();
 
   function scanFolder(): void {
     AddFolder(path)
@@ -25,7 +27,7 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
     <Stack>
       <FolderInput path={path} onSelect={setPath}></FolderInput>
       <Center>
-        <Button onClick={scanFolder}>Scan</Button>
+        <Button onClick={scanFolder}>{t('add.folder.scan')}</Button>
       </Center>
     </Stack>
   );

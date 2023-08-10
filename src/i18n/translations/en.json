@@ -1,4 +1,28 @@
 {
+  "folderinput": {
+    "select": "Select Folder"
+  },
+  "searchbar": {
+    "placeholder": "Filename"
+  },
+  "add": {
+    "folder": {
+      "scan": "Scan"
+    }
+  },
+  "video": {
+    "launch": {
+      "play": "Play"
+    },
+    "rating": "Rating: ",
+    "watch": {
+      "watched": "Watched",
+      "not": {
+        "watched": "Not Watched"
+      }
+    }
+  },
+  "none": "None",
   "abitrate": "Audio Bit Rate",
   "acodec": "Audio Codec",
   "asample": "Audio Sample Rate",
