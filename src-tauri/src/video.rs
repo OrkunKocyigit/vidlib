@@ -9,9 +9,15 @@ use std::path::{Path, PathBuf};
 use anyhow::Error;
 use derive_more::{Display, Error};
 use gstreamer::prelude::*;
-use gstreamer::{ClockTime, MessageType, Pipeline, State};
+use gstreamer::{ClockTime, Pipeline};
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+macro_rules! get_tag {
+    ($tag:expr, $ty:ty) => {
+        $tag.get::<$ty>().map(|k| k.get().to_owned())
+    };
+}
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct VideoCategory {
@@ -262,86 +268,71 @@ pub struct VideoMetadata {
     #[builder(default = "None")]
     framerate: Option<String>,
     #[builder(default = "None")]
-    filesize: Option<u64>,
+    filesize: Option<String>,
     #[builder(default = "None")]
-    bitrate: Option<u64>,
+    bitrate: Option<String>,
     #[builder(default = "None")]
     length: Option<String>,
     #[builder(default = "None")]
     codec: Option<String>,
     #[builder(default = "None")]
-    abitrate: Option<u32>,
+    abitrate: Option<String>,
     #[builder(default = "None")]
     acodec: Option<String>,
     #[builder(default = "None")]
-    asample: Option<String>,
+    asample: Option<u32>,
 }
 
-pub(crate) async fn create_metadata(url: Url) -> Result<VideoMetadata, Error> {
-    // Create a pipeline to read the file and get its information
-    let pipeline =
-        gstreamer::parse_launch(&format!("uridecodebin uri={} ! decodebin ! fakesink", url))?
-            .downcast::<Pipeline>()
-            .unwrap();
-    let bus = pipeline.bus().unwrap();
-
-    // Set the pipeline to the PAUSED state to get its information
-    match pipeline.set_state(State::Paused) {
-        Ok(_) => (),
-        Err(e) => return Err(Error::msg(e.to_string())),
-    }
-
-    // Wait for the pipeline to preroll
-    bus.timed_pop_filtered(ClockTime::NONE, &[MessageType::AsyncDone])
-        .unwrap();
-
-    // Get the video and audio information from the pipeline
-    let mut video_info = None;
-    let mut audio_info = None;
-    for element_result in pipeline.iterate_elements() {
-        if let Ok(element) = element_result {
-            let pads = element.sink_pads();
-            for pad in pads {
-                if let Some(caps) = pad.caps() {
-                    if caps.structure(0).unwrap().name().starts_with("video") {
-                        video_info =
-                            Some(gstreamer_video::VideoInfo::from_caps(caps.as_ref()).unwrap());
-                    } else if caps.structure(0).unwrap().name().starts_with("audio") {
-                        audio_info =
-                            Some(gstreamer_audio::AudioInfo::from_caps(caps.as_ref()).unwrap());
-                    }
-                }
-            }
-        }
-    }
-
-    let mut m = VideoMetadataBuilder::default();
-    if let Some(video_info) = video_info {
-        m.width(Some(video_info.width()));
-        m.height(Some(video_info.height()));
-        m.framerate(Some(format!(
-            "{}.{}",
-            video_info.fps().numer(),
-            video_info.fps().denom()
+pub(crate) async fn create_metadata(path: &PathBuf) -> Result<VideoMetadata, Error> {
+    let discoverer = gstreamer_pbutils::Discoverer::new(ClockTime::from_seconds(5))?;
+    let discoverer = discoverer.discover_uri(&format!(
+        "{}",
+        Url::from_file_path(&path).expect("Video can't be opened")
+    ))?;
+    let mut builder = VideoMetadataBuilder::default();
+    builder.filesize(Some(path.metadata()?.len()).map(format_file_size));
+    if let Some(duration) = discoverer.duration() {
+        let seconds = duration.seconds();
+        let hours = seconds / 3600;
+        let minutes = (seconds % 3600) / 60;
+        let seconds = seconds % 60;
+        let milliseconds = duration.mseconds() % 1000;
+        builder.length(Some(format!(
+            "{:02}:{:02}:{:02}.{:03}",
+            hours, minutes, seconds, milliseconds
         )));
-        let filesize = url.to_file_path().unwrap().metadata()?.len();
-        m.filesize(Some(filesize));
-        let duration = pipeline.query_duration::<ClockTime>().unwrap().seconds() as f64;
-        let bitrate = (filesize as f64 / duration) as u64;
-        m.bitrate(Some(bitrate));
-        m.length(Some((duration as u64).to_string()));
-        m.codec(Some(video_info.format_info().to_string()));
     }
+    if let Some(video) = discoverer.video_streams().first() {
+        builder.bitrate(Some(format!("{} kbps", video.bitrate() / 1024)));
+        builder.width(Some(video.width()));
+        builder.height(Some(video.height()));
+        builder.framerate(Some(format!(
+            "{}",
+            video.framerate().numer() as f32 / video.framerate().denom() as f32
+        )));
+    }
+    if let Some(audio) = discoverer.audio_streams().first() {
+        builder.abitrate(Some(format!("{} kbps", audio.bitrate() / 1024)));
+        builder.asample(Some(audio.sample_rate()));
+    }
+    if let Some(tags) = discoverer.tags() {
+        builder.codec(get_tag!(tags, gst::tags::VideoCodec));
+        builder.acodec(get_tag!(tags, gst::tags::AudioCodec));
+    }
+    builder.build().map_err(|e| Error::msg(e.to_string()))
+}
 
-    if let Some(audio_info) = audio_info {
-        m.acodec(Some(audio_info.format_info().to_string()));
-        m.abitrate(Some(audio_info.rate()));
+fn format_file_size(size: u64) -> String {
+    let units = ["KB", "MB", "GB", "TB", "PB", "EB"];
+    if size < 1024 {
+        return format!("{} B", size);
     }
-
-    // Stop the pipeline
-    pipeline.set_state(State::Null).unwrap();
-    match m.build() {
-        Ok(r) => Ok(r),
-        Err(r) => Err(Error::msg(r.to_string())),
+    let mut size = size as f64 / 1024.0;
+    for unit in units.iter() {
+        if size < 1024.0 {
+            return format!("{:.1} {}", size, unit);
+        }
+        size /= 1024.0;
     }
+    format!("{:.1} {}", size, units.last().unwrap())
 }

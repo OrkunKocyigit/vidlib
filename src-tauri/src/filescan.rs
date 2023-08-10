@@ -135,8 +135,7 @@ impl VideoFile {
     }
 
     pub(crate) async fn get_metadata(&self) -> Result<VideoMetadata, Error> {
-        let video_url = url::Url::from_file_path(&self.path).expect("Video can't be opened");
-        video::create_metadata(video_url).await
+        video::create_metadata(&self.path).await
     }
 }
 
