@@ -1,10 +1,10 @@
 [package]
 name = "vidlib"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+version = "0.1.0"
+description = "Explorer based video library management sfotware"
+authors = ["Orkun Kocyigit"]
+license = "MIT"
+repository = "https://github.com/OrkunKocyigit/vidlib/"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

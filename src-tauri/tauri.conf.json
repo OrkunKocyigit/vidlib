@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "vidlib",
-    "version": "0.0.0"
+    "version": "0.1.0"
   },
   "tauri": {
     "allowlist": {
@@ -35,10 +35,18 @@
       ],
       "appimage": {
         "bundleMediaFramework": true
+      },
+      "windows": {
+        "webviewInstallMode": {
+          "type": "embedBootstrapper"
+        }
       }
     },
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost"
+      "csp": null
+    },
+    "updater": {
+      "active": false
     },
     "windows": [
       {
