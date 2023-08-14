@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import EditableButtons from '../../../components/EditableButtons';
 import { useDisclosure } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
+import { SetNotes } from '../../../service/SetNotes';
+import useStyles from './VideoNotes.styles';
 
 export interface VideoNotesProps {
   video: VideoFile;
@@ -12,17 +14,30 @@ function VideoNotes(props: VideoNotesProps): JSX.Element {
   const { t } = useTranslation();
   const [editable, { open, close }] = useDisclosure(false);
   const [notes, setNotes] = useState(props.video.video?.notes);
+  const [viewNotes, setViewNotes] = useState(props.video.video?.notes);
+  const { classes } = useStyles();
 
   useEffect(() => {
     close();
+    console.info(props.video);
     setNotes(props.video.video?.notes);
   }, [props.video.video?.notes]);
 
   function onSaveNotes(): void {
-    close();
+    SetNotes(props.video, notes ?? '')
+      .then((value) => {
+        const response = value.response;
+        setNotes(response);
+        setViewNotes(response);
+      })
+      .catch((reason) => {
+        console.error(reason);
+      })
+      .finally(close);
   }
 
   function onCancelNotes(): void {
+    setNotes(viewNotes);
     close();
   }
 
@@ -50,7 +65,7 @@ function VideoNotes(props: VideoNotesProps): JSX.Element {
             setNotes(e.target.value);
           }}></Textarea>
       ) : (
-        <Text>{props.video.video?.notes}</Text>
+        <Text className={classes.text}>{notes}</Text>
       )}
     </Flex>
   );
