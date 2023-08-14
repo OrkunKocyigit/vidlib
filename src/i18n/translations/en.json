@@ -11,6 +11,7 @@
     }
   },
   "video": {
+    "delete": "Delete Path",
     "launch": {
       "play": "Play"
     },

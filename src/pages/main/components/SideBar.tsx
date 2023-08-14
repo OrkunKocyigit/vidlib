@@ -34,7 +34,7 @@ function SideBar({ folders, openWizard }: Props): JSX.Element {
         </SearchBar>
       </Navbar.Section>
       <Navbar.Section grow className={classes.files} component={ScrollArea}>
-        <FileTreeView folders={folders}></FileTreeView>
+        <FileTreeView folders={folders} showDelete={true}></FileTreeView>
       </Navbar.Section>
     </Navbar>
   );

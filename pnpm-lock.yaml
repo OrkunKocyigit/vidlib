@@ -23,6 +23,9 @@ dependencies:
   i18next:
     specifier: ^23.4.4
     version: 23.4.4
+  mantine-contextmenu:
+    specifier: ^1.3.14
+    version: 1.3.14(@mantine/core@6.0.17)(@mantine/hooks@6.0.17)(react@18.2.0)
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -3893,6 +3896,18 @@ packages:
     dependencies:
       pify: 4.0.1
       semver: 5.7.2
+    dev: false
+
+  /mantine-contextmenu@1.3.14(@mantine/core@6.0.17)(@mantine/hooks@6.0.17)(react@18.2.0):
+    resolution: {integrity: sha512-D0eeTcC4XKmFISrQZsvr28tQ2Bqa8zGwA5xry58l1qMxdYApaYgMT6HG34BJhgD1MhtKJJTC3avEslysV3FjQA==}
+    peerDependencies:
+      '@mantine/core': '>=6 <=6.0.17 || >=6.0.19'
+      '@mantine/hooks': '>=6 <=6.0.17 || >=6.0.19'
+      react: '>=18'
+    dependencies:
+      '@mantine/core': 6.0.17(@emotion/react@11.11.1)(@mantine/hooks@6.0.17)(@types/react@18.2.18)(react-dom@18.2.0)(react@18.2.0)
+      '@mantine/hooks': 6.0.17(react@18.2.0)
+      react: 18.2.0
     dev: false
 
   /merge-stream@2.0.0:
