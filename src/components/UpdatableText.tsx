@@ -1,16 +1,14 @@
 import {
-  ActionIcon,
   type ActionIconProps,
   Grid,
-  Group,
   TextInput,
   type TextInputProps,
   Title,
   type TitleProps
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconCheck, IconEdit, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
+import EditableButtons from './EditableButtons';
 
 export interface UpdatableTextInnerProps {
   text: string;
@@ -56,22 +54,15 @@ function UpdatableText(props: UpdatableTextInnerProps): JSX.Element {
         )}
       </Grid.Col>
       <Grid.Col span={3}>
-        {editable ? (
-          <Group>
-            <ActionIcon {...props.saveButtonProps} onClick={onSaveText}>
-              <IconCheck></IconCheck>
-            </ActionIcon>
-            <ActionIcon {...props.cancelButtonProps} onClick={onCancelText}>
-              <IconX></IconX>
-            </ActionIcon>
-          </Group>
-        ) : (
-          <Group>
-            <ActionIcon {...props.editButtonProps} onClick={open}>
-              <IconEdit></IconEdit>
-            </ActionIcon>
-          </Group>
-        )}
+        <EditableButtons
+          editable={editable}
+          saveButtonProps={props.saveButtonProps}
+          onSaveButtonClick={onSaveText}
+          cancelButtonProps={props.cancelButtonProps}
+          onCancelButtonClick={onCancelText}
+          editButtonProps={props.editButtonProps}
+          onEditButtonClick={open}
+        />
       </Grid.Col>
     </Grid>
   );
