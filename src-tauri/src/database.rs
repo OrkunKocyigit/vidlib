@@ -177,3 +177,14 @@ pub(crate) fn update_name(c: &Connection, i: &String, n: &String) -> Option<()> 
         .expect("Execute failed");
     Some(())
 }
+
+pub(crate) fn update_notes(c: &Connection, i: &String, n: &String) -> Option<()> {
+    c.prepare("UPDATE VIDEOS SET NOTES = @notes WHERE ID = @id")
+        .expect("Query Failed")
+        .execute(named_params! {
+            "@notes": n,
+            "@id": i
+        })
+        .expect("Execute failed");
+    Some(())
+}

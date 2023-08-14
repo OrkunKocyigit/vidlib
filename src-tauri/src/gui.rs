@@ -191,3 +191,20 @@ pub(crate) async fn get_metadata(v: &VideoFile) -> Result<Response<VideoMetadata
         }),
     };
 }
+
+pub(crate) fn update_notes(
+    c: &Connection,
+    v: &mut HashMap<String, VideoEntry>,
+    f: &VideoFile,
+    n: &String,
+) -> Result<Response<String>, ()> {
+    v.get_mut(&f.id).and_then(|e| {
+        e.set_notes(n.to_owned());
+        database::update_notes(c, &f.id, n)
+    });
+    Ok(Response {
+        result: ResponseType::SUCCESS,
+        response: Some(n.to_owned()),
+        error: None,
+    })
+}
