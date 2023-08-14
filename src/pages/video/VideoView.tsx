@@ -31,7 +31,7 @@ const VideoView = function (props: VideoViewProps): JSX.Element {
 
   return (
     <Flex direction={'column'} gap={'md'} pos={'relative'} h={'100%'}>
-      <LoadingOverlay visible={visible} overlayBlur={2}></LoadingOverlay>
+      <LoadingOverlay visible={visible} overlayBlur={2} zIndex={150}></LoadingOverlay>
       {videoFile != null ? (
         <>
           <VideoHeader video={videoFile}></VideoHeader>
