@@ -24,7 +24,7 @@
     },
     "bundle": {
       "active": true,
-      "targets": "all",
+      "targets": ["nsis"],
       "identifier": "com.orkun.vidlib",
       "icon": [
         "icons/32x32.png",
@@ -39,6 +39,9 @@
       "windows": {
         "webviewInstallMode": {
           "type": "embedBootstrapper"
+        },
+        "nsis": {
+          "template": "installer.nsi"
         }
       }
     },
