@@ -21,12 +21,10 @@ function FileTreeView(props: FileTreeViewProps): JSX.Element {
   return (
     <div className={className}>
       {folders.map((folder) => (
-        <>
-          <FolderInfoView
-            folder={folder}
-            key={folder.path}
-            showDelete={showDelete}></FolderInfoView>
-        </>
+        <FolderInfoView
+          folder={folder}
+          key={`${folder.path}_${folder.depth}`}
+          showDelete={showDelete}></FolderInfoView>
       ))}
     </div>
   );

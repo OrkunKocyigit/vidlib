@@ -105,7 +105,11 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
         <Collapse in={opened}>
           <FileTreeView folders={folder.folders} className={classes.link}></FileTreeView>
           {folder.videos.map((video) => (
-            <VideoFileView video={video} key={video.path} className={classes.link} />
+            <VideoFileView
+              video={video}
+              key={`${video.path}${video.depth}`}
+              className={classes.link}
+            />
           ))}
         </Collapse>
       ) : null}
