@@ -43,61 +43,36 @@ impl VideoFile {
     fn hash_file(path_ref: &PathBuf, c: &mut Option<&mut VideoCache>) -> String {
         let file = File::open(path_ref).expect("Failed to open file");
         let file_size = file.metadata().expect("Failed to get file metadata").len();
-        // Check we can use cached data first
         if let Some(v) = c.as_ref().and_then(|c| c.get_video(path_ref)) {
             if file_size == v.filesize() {
                 return v.id().into();
             } else {
-                c.as_mut().and_then(|c| Some(c.delete_video(path_ref)));
+                c.as_mut().map(|c| c.delete_video(path_ref));
             }
         }
 
         let mut reader = BufReader::new(file);
         let mut hasher = Xxh3::new();
-        let mut buffer = [0; 1024];
+        let mut buffer = Vec::new();
 
         if file_size > CHUNK_SIZE {
-            // Hash first CHUNK_SIZE bytes
-            let mut bytes_read: u64 = 0;
-            loop {
-                if bytes_read >= CHUNK_SIZE {
-                    break;
-                }
-                let count = reader.read(&mut buffer).expect("Failed to read data");
-                if count == 0 {
-                    break;
-                }
-                hasher.update(&buffer[..count]);
-                bytes_read += count as u64;
-            }
-
-            // Seek to CHUNK_SIZE bytes from end of file
             reader
-                .seek(SeekFrom::End(-(CHUNK_SIZE as i64)))
-                .expect("Failed to seek");
-
-            // Hash last CHUNK_SIZE bytes
-            loop {
-                let count = reader.read(&mut buffer).expect("Failed to read data");
-                if count == 0 {
-                    break;
-                }
-                hasher.update(&buffer[..count]);
-            }
+                .by_ref()
+                .take(CHUNK_SIZE)
+                .read_to_end(&mut buffer)
+                .unwrap();
+            hasher.update(&buffer);
+            reader.seek(SeekFrom::End(-(CHUNK_SIZE as i64))).unwrap();
+            reader.read_to_end(&mut buffer).unwrap();
+            hasher.update(&buffer);
         } else {
-            // Hash entire file
-            loop {
-                let count = reader.read(&mut buffer).expect("Failed to read data");
-                if count == 0 {
-                    break;
-                }
-                hasher.update(&buffer[..count]);
-            }
+            reader.read_to_end(&mut buffer).unwrap();
+            hasher.update(&buffer);
         }
 
         let id = format!("{:x}", hasher.finish());
         c.as_mut()
-            .and_then(|c| Some(c.add_video(path_ref, VideoCacheItem::new(file_size, id.clone()))));
+            .map(|c| c.add_video(path_ref, VideoCacheItem::new(file_size, id.clone())));
         id
     }
 
