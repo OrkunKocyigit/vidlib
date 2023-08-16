@@ -179,6 +179,11 @@ fn delete_path(app: AppHandle, state: State<AppState>, path: &str) -> Result<Res
     }
 }
 
+#[tauri::command]
+fn open_path(path: &str) -> () {
+    opener::open(path).unwrap()
+}
+
 #[derive(Clone, Serialize)]
 struct EmitWatched {
     id: String,
@@ -212,7 +217,8 @@ fn main() {
             set_video_name,
             get_metadata,
             set_video_notes,
-            delete_path
+            delete_path,
+            open_path
         ])
         .setup(|app| {
             let handle = app.handle();
