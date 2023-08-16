@@ -1,5 +1,5 @@
 import { type FolderInfo } from '../../../entities/FolderInfo';
-import React from 'react';
+import React, { useCallback } from 'react';
 import FileTreeView from './FileTreeView';
 import VideoFileView from './VideoFileView';
 import {
@@ -25,6 +25,8 @@ import useStyles from './FolderInfoView.styles';
 import { useContextMenu } from 'mantine-contextmenu';
 import { useTranslation } from 'react-i18next';
 import { DeletePath } from '../../../service/DeletePath';
+import { type ContextMenuItemOptions } from 'mantine-contextmenu/dist/types';
+import { OpenPath } from '../../../service/OpenPath';
 
 export interface FolderInfoProps {
   folder: FolderInfo;
@@ -69,8 +71,42 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   const showContextMenu = useContextMenu();
   const { t } = useTranslation();
 
+  function getDefaultMenu(): ContextMenuItemOptions[] {
+    return [
+      {
+        key: 'open',
+        icon: <IconFolderOpen size={16} color={'blue'}></IconFolderOpen>,
+        title: t('open.path'),
+        onClick: () => {
+          openPath();
+        }
+      }
+    ];
+  }
+
+  const contextMenu = useCallback(() => {
+    const menuItems = getDefaultMenu();
+    if (showDelete === true) {
+      menuItems.push({
+        key: 'delete',
+        icon: <IconX size={16} color={'red'}></IconX>,
+        title: t('video.delete'),
+        onClick: () => {
+          deletePath();
+        }
+      });
+    }
+    return menuItems;
+  }, [showDelete]);
+
   function deletePath(): void {
-    DeletePath(props.folder.path).catch((reason) => {
+    DeletePath(folder.path).catch((reason) => {
+      console.error(reason);
+    });
+  }
+
+  function openPath(): void {
+    OpenPath(folder.path).catch((reason) => {
       console.error(reason);
     });
   }
@@ -80,20 +116,7 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
       <UnstyledButton
         onClick={toggle}
         className={classes.control}
-        onContextMenu={
-          showDelete === true
-            ? showContextMenu([
-                {
-                  key: 'delete',
-                  icon: <IconX size={16} color={'red'}></IconX>,
-                  title: t('video.delete'),
-                  onClick: () => {
-                    deletePath();
-                  }
-                }
-              ])
-            : undefined
-        }>
+        onContextMenu={showContextMenu(contextMenu())}>
         <Group spacing={0} noWrap>
           <Flex align={'center'} mr={'auto'} pr={'md'}>
             <ThemeIcon size={20} variant={'outline'}>

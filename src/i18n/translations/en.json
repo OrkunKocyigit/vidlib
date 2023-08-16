@@ -10,6 +10,9 @@
       "scan": "Scan"
     }
   },
+  "open": {
+    "path": "Open Path"
+  },
   "video": {
     "delete": "Delete Path",
     "launch": {
