@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use std::fs::{read_dir, File};
+use std::fs::{read_dir, DirEntry, File};
 use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::os::windows::prelude::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use anyhow::Error;
@@ -152,7 +153,12 @@ pub struct FolderInfo {
 impl FolderInfo {
     pub fn new<P: AsRef<Path>>(path: P, depth: usize) -> Self {
         let path_ref = path.as_ref().to_owned();
-        let name = path_ref.file_name().unwrap().to_str().unwrap().to_string();
+        let name = path_ref
+            .file_name()
+            .unwrap_or_else(|| path_ref.as_os_str())
+            .to_str()
+            .unwrap()
+            .to_string();
         Self {
             path: path_ref,
             folders: Vec::new(),
@@ -172,22 +178,18 @@ impl FolderInfo {
     }
 
     pub fn read_folder(&mut self, c: &mut Option<&mut VideoCache>) {
-        let dir = read_dir(&self.path).unwrap();
-        for entry in dir {
-            let path = match entry {
-                Ok(entry) => entry.path(),
-                Err(_) => continue,
-            };
-            if path.is_file() {
-                if is_video(&path) {
+        if let Ok(entries) = read_dir(&self.path) {
+            for entry in entries.filter_map(Result::ok) {
+                let path = entry.path();
+                if path.is_file() && is_video(&path) {
                     self.push_video(VideoFile::new(path, self.depth, c));
                     self.empty = false;
+                } else if path.is_dir() && !is_hidden(&entry) {
+                    let mut folder = FolderInfo::new(path, self.depth + 1);
+                    folder.read_folder(c);
+                    self.push_folder(folder);
+                    self.empty = false;
                 }
-            } else if path.is_dir() {
-                let mut folder = FolderInfo::new(path, self.depth + 1);
-                folder.read_folder(c);
-                self.push_folder(folder);
-                self.empty = false;
             }
         }
     }
@@ -225,4 +227,21 @@ impl<'a> FileScan<'a> {
 
         Ok(root)
     }
+}
+
+#[cfg(target_os = "windows")]
+fn is_hidden(entry: &DirEntry) -> bool {
+    entry
+        .metadata()
+        .map(|metadata| metadata.file_attributes() & 0x2 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_hidden(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.starts_with('.'))
+        .unwrap_or(false)
 }
