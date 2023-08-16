@@ -24,6 +24,7 @@ import styled from 'styled-components';
 import useStyles from './FolderInfoView.styles';
 import { useContextMenu } from 'mantine-contextmenu';
 import { useTranslation } from 'react-i18next';
+import { DeletePath } from '../../../service/DeletePath';
 
 export interface FolderInfoProps {
   folder: FolderInfo;
@@ -69,7 +70,9 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   const { t } = useTranslation();
 
   function deletePath(): void {
-    console.info(props.folder.path);
+    DeletePath(props.folder.path).catch((reason) => {
+      console.error(reason);
+    });
   }
 
   return (

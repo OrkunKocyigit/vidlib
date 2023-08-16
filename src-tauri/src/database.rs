@@ -188,3 +188,26 @@ pub(crate) fn update_notes(c: &Connection, i: &String, n: &String) -> Option<()>
         .expect("Execute failed");
     Some(())
 }
+
+pub(crate) fn delete_path(db: &mut Connection, path: &str) -> Result<(), Error> {
+    let transaction = db.transaction()?;
+    transaction
+        .prepare("DELETE FROM PATHS WHERE PATH = @path")?
+        .execute(named_params! {"@path": path})?;
+    transaction.commit()?;
+    Ok(())
+}
+
+pub(crate) fn get_cache_items_with_path(
+    db: &mut Connection,
+    path: &str,
+) -> Result<Vec<String>, Error> {
+    let mut query = db.prepare("SELECT path FROM VIDEO_CACHE WHERE path LIKE @path")?;
+    let rows = query.query_map(
+        named_params! {
+            "@path": format!("{}%", path)
+        },
+        |row| row.get("path"),
+    )?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}

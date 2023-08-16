@@ -12,7 +12,7 @@ use tauri::{AppHandle, Error, Manager, State};
 
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
-use crate::service::Response;
+use crate::service::{Response, ResponseType};
 use crate::state::AppState;
 use crate::video::VideoMetadata;
 
@@ -157,10 +157,37 @@ async fn get_metadata(video: VideoFile) -> Result<Response<VideoMetadata>, ()> {
     gui::get_metadata(&video).await
 }
 
+#[tauri::command]
+fn delete_path(app: AppHandle, state: State<AppState>, path: &str) -> Result<Response<bool>, ()> {
+    let mut db_guard = state.db.lock().unwrap();
+    let db = db_guard.as_mut().unwrap();
+    if let Err(e) = gui::validate_path(&db, &path) {
+        Ok(e)
+    } else {
+        let mut cache_guard = state.video_cache.lock().unwrap();
+        let cache = cache_guard.as_mut().unwrap();
+        let response = gui::delete_path(db, cache, &path);
+        if response.result == ResponseType::SUCCESS {
+            let _ = app.emit_all(
+                "path_deleted",
+                EmitPathDeleted {
+                    path: path.to_string(),
+                },
+            );
+        }
+        Ok(response)
+    }
+}
+
 #[derive(Clone, Serialize)]
 struct EmitWatched {
     id: String,
     watched: bool,
+}
+
+#[derive(Clone, Serialize)]
+struct EmitPathDeleted {
+    path: String,
 }
 
 fn main() {
@@ -184,7 +211,8 @@ fn main() {
             open_video,
             set_video_name,
             get_metadata,
-            set_video_notes
+            set_video_notes,
+            delete_path
         ])
         .setup(|app| {
             let handle = app.handle();

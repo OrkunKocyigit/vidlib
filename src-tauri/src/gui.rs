@@ -202,9 +202,45 @@ pub(crate) fn update_notes(
         e.set_notes(n.to_owned());
         database::update_notes(c, &f.id, n)
     });
-    Ok(Response {
+    Ok(wrap_success(n.to_owned()))
+}
+
+pub(crate) fn wrap_success<T>(response: T) -> Response<T> {
+    Response {
         result: ResponseType::SUCCESS,
-        response: Some(n.to_owned()),
+        response: Some(response),
         error: None,
-    })
+    }
+}
+pub(crate) fn wrap_failure<T>(error: String) -> Response<T> {
+    Response {
+        result: ResponseType::FAILURE,
+        response: None,
+        error: Some(error),
+    }
+}
+
+pub(crate) fn validate_path(db: &Connection, path: &str) -> Result<bool, Response<bool>> {
+    database::get_paths(db)
+        .map(|paths| paths.contains(&path.to_string()))
+        .map_err(|e| wrap_failure(e.to_string()))
+}
+
+pub(crate) fn delete_path(
+    db: &mut Connection,
+    cache: &mut VideoCache,
+    path: &str,
+) -> Response<bool> {
+    if let Err(r) = database::delete_path(db, &path) {
+        wrap_failure(r.to_string())
+    } else {
+        match database::get_cache_items_with_path(db, path) {
+            Ok(paths) => {
+                paths.iter().for_each(|p| cache.delete_video(p));
+                cache.commit(db);
+                wrap_success(true)
+            }
+            Err(r) => wrap_failure(r.to_string()),
+        }
+    }
 }
