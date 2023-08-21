@@ -52,6 +52,7 @@ function MainView(): JSX.Element {
 
   function onFolderAdd(folderInfo: FolderInfo): void {
     setFolders([...folders, folderInfo]);
+    close();
   }
 
   return (
