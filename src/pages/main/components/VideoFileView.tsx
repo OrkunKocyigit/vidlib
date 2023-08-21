@@ -1,10 +1,13 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { Box, Flex, Group, ThemeIcon, UnstyledButton } from '@mantine/core';
-import { IconVideo } from '@tabler/icons-react';
+import { IconFolderOpen, IconVideo } from '@tabler/icons-react';
 import { type IVideoContext, VideoContext } from '../entities/VideoContext';
 import useStyles, { type VideoFileViewVariants } from './VideoFileView.styles';
 import { listen } from '@tauri-apps/api/event';
+import { useContextMenu } from 'mantine-contextmenu';
+import { useTranslation } from 'react-i18next';
+import { OpenPath } from '../../../service/OpenPath';
 
 export interface VideoFileViewProps extends React.ComponentPropsWithoutRef<'div'> {
   video: VideoFile;
@@ -17,6 +20,9 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
     },
     [props.video.watched]
   );
+  const { t } = useTranslation();
+  const showContextMenu = useContextMenu();
+
   useEffect(() => {
     const unlisten = listen(
       'update_watch',
@@ -46,8 +52,25 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
     }
   }
 
+  function openPath(): void {
+    OpenPath(props.video.path, true).catch((reason) => {
+      console.error(reason);
+    });
+  }
+
   return (
-    <div className={props.className}>
+    <div
+      className={props.className}
+      onContextMenu={showContextMenu([
+        {
+          key: 'open',
+          icon: <IconFolderOpen size={16} color={'blue'}></IconFolderOpen>,
+          title: t('open.path'),
+          onClick: () => {
+            openPath();
+          }
+        }
+      ])}>
       <UnstyledButton onClick={updateVideo} className={classes.control}>
         <Group position={'apart'} spacing={0}>
           <Flex align={'center'}>

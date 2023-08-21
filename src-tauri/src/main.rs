@@ -180,8 +180,15 @@ fn delete_path(app: AppHandle, state: State<AppState>, path: &str) -> Result<Res
 }
 
 #[tauri::command]
-fn open_path(path: &str) -> () {
-    opener::open(path).unwrap()
+fn open_path(path: &str, parent: bool) {
+    let path_buf = PathBuf::from(path);
+    let path = if parent {
+        let parent_path = path_buf.parent().unwrap();
+        parent_path.to_str().unwrap()
+    } else {
+        path
+    };
+    opener::open(path).unwrap();
 }
 
 #[derive(Clone, Serialize)]
