@@ -25,12 +25,10 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
 
   useEffect(() => {
     const unlisten = listen(
-      'update_watch',
-      ({ payload }: { payload: { id: string; watched: boolean } }) => {
-        if (payload.id === props.video.id) {
-          props.video.watched = payload.watched;
-          setVariant(getVariant(payload.watched));
-        }
+      `update_watch_${props.video.id}`,
+      ({ payload }: { payload: { watched: boolean } }) => {
+        props.video.watched = payload.watched;
+        setVariant(getVariant(payload.watched));
       }
     );
     return () => {

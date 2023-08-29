@@ -147,11 +147,8 @@ fn set_watched(
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
     let _ = app.emit_all(
-        "update_watch",
-        EmitWatched {
-            id: file.id.clone(),
-            watched,
-        },
+        format!("update_watch_{}", file.id.clone()).as_str(),
+        EmitWatched { watched },
     );
     gui::update_watched(connection, videos, file, watched)
 }
@@ -230,7 +227,6 @@ fn open_path(path: &str, parent: bool) {
 
 #[derive(Clone, Serialize)]
 struct EmitWatched {
-    id: String,
     watched: bool,
 }
 
