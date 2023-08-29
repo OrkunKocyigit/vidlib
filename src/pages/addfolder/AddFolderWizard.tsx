@@ -1,4 +1,4 @@
-import { Button, Center, Progress, Stack } from '@mantine/core';
+import { Button, Center, Progress, Stack, Text } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import FolderInput from '../../components/FolderInput';
 import { type FolderInfo } from '../../entities/FolderInfo';
@@ -55,15 +55,20 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
   return (
     <Stack>
       {total > 0 ? (
-        <Progress
-          color="green"
-          radius="md"
-          size="xl"
-          value={Math.min(1, Math.max(0, current / total)) * 100}
-          label={name}
-          striped
-          animate
-        />
+        <>
+          <Text truncate={'end'} size={'sm'}>
+            {name}
+          </Text>
+          <Progress
+            color="green"
+            radius="md"
+            size="xl"
+            value={Math.min(1, Math.max(0, current / total)) * 100}
+            label={`${current} / ${total}`}
+            striped
+            animate
+          />
+        </>
       ) : null}
       <FolderInput path={path} onSelect={setPath}></FolderInput>
       <Center>
