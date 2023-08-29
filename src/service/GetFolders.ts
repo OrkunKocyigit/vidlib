@@ -10,8 +10,8 @@ export async function GetFolders(): Promise<ServiceResponse<FolderInfo[]>> {
     }
     const folderInfos = [];
     for (const iFolderInfo of response as IFolderInfo[]) {
-      const { depth, name, path, empty, folders, videos } = iFolderInfo;
-      const folderInfo = new FolderInfo(depth, name, path, empty, folders, videos);
+      const { depth, name, path, empty, folders, videos, id } = iFolderInfo;
+      const folderInfo = new FolderInfo(depth, name, path, empty, folders, videos, id);
       folderInfos.push(folderInfo);
     }
     return new ServiceResponse(result, folderInfos);

@@ -1,6 +1,7 @@
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::fs::{read_dir, read_link, symlink_metadata, DirEntry, File};
-use std::hash::Hasher;
+use std::hash::{Hash, Hasher};
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::os::windows::prelude::MetadataExt;
 use std::path::{Path, PathBuf};
@@ -117,6 +118,7 @@ impl VideoFile {
 
 #[derive(Deserialize, Serialize)]
 pub struct FolderInfo {
+    id: String,
     path: PathBuf,
     folders: Vec<FolderInfo>,
     videos: Vec<VideoFile>,
@@ -134,7 +136,11 @@ impl FolderInfo {
             .to_str()
             .unwrap()
             .to_string();
+        let mut hasher = DefaultHasher::new();
+        path_ref.hash(&mut hasher);
+        let id = format!("{:x}", hasher.finish());
         Self {
+            id,
             path: path_ref,
             folders: Vec::new(),
             videos: Vec::new(),

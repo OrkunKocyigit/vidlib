@@ -1,5 +1,5 @@
 import { type FolderInfo } from '../../../entities/FolderInfo';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import FileTreeView from './FileTreeView';
 import VideoFileView from './VideoFileView';
 import {
@@ -21,12 +21,13 @@ import {
 } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import styled from 'styled-components';
-import useStyles from './FolderInfoView.styles';
+import useStyles, { type FolderInfoViewVariants } from './FolderInfoView.styles';
 import { useContextMenu } from 'mantine-contextmenu';
 import { useTranslation } from 'react-i18next';
 import { DeletePath } from '../../../service/DeletePath';
 import { type ContextMenuItemOptions } from 'mantine-contextmenu/dist/types';
 import { OpenPath } from '../../../service/OpenPath';
+import { listen } from '@tauri-apps/api/event';
 
 export interface FolderInfoProps {
   folder: FolderInfo;
@@ -67,7 +68,8 @@ function renderFolderIcon(folder: FolderInfo, state: boolean): JSX.Element | nul
 function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   const { folder, showDelete } = useComponentDefaultProps('FolderInfo', defaultProps, props);
   const [opened, { toggle }] = useDisclosure(false);
-  const { classes } = useStyles();
+  const [variant, setVariant] = useState<FolderInfoViewVariants>();
+  const { classes } = useStyles({ variant });
   const showContextMenu = useContextMenu();
   const { t } = useTranslation();
 
@@ -110,6 +112,34 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
       console.error(reason);
     });
   }
+
+  useEffect(() => {
+    const eventName = `update_watch_${props.folder.id}`;
+    const unlisten = listen(eventName, ({ payload }: { payload: { watched: boolean } }) => {
+      let watched;
+      if (props.folder.videos.length <= 0) {
+        watched = false;
+      } else {
+        watched = props.folder.videos
+          .map((value) => value.watched)
+          .reduce((previousValue, currentValue) => previousValue && currentValue, true);
+      }
+      if (watched) {
+        setVariant('watched');
+      } else {
+        setVariant(undefined);
+      }
+    });
+    return () => {
+      unlisten
+        .then((value) => {
+          value();
+        })
+        .catch((reason) => {
+          console.error(reason);
+        });
+    };
+  }, []);
 
   return (
     <>

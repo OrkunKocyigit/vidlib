@@ -8,10 +8,10 @@ export async function ScanFile(path: string): Promise<ServiceResponse<FolderInfo
     if (error !== null) {
       throw new Error(error);
     }
-    const { depth, name, path, empty, folders, videos } = response as IFolderInfo;
+    const { depth, name, path, empty, folders, videos, id } = response as IFolderInfo;
     return new ServiceResponse<FolderInfo>(
       result,
-      new FolderInfo(depth, name, path, empty, folders, videos)
+      new FolderInfo(depth, name, path, empty, folders, videos, id)
     );
   });
 }

@@ -8,7 +8,10 @@ export async function AddFolder(path: string): Promise<ServiceResponse<FolderInf
     if (error !== null) {
       throw new Error(error);
     }
-    const { depth, name, path, empty, folders, videos } = response as IFolderInfo;
-    return new ServiceResponse(result, new FolderInfo(depth, name, path, empty, folders, videos));
+    const { depth, name, path, empty, folders, videos, id } = response as IFolderInfo;
+    return new ServiceResponse(
+      result,
+      new FolderInfo(depth, name, path, empty, folders, videos, id)
+    );
   });
 }

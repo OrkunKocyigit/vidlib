@@ -5,6 +5,8 @@
 extern crate derive_builder;
 
 use std::cell::RefCell;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::path::PathBuf;
 
@@ -135,6 +137,16 @@ fn set_video_rating(
     gui::update_rating(connection, videos, file, rating)
 }
 
+fn emit_folder_watched(app: AppHandle, path: &PathBuf, watched: bool) {
+    if let Some(parent) = path.parent() {
+        let mut hasher = DefaultHasher::new();
+        parent.hash(&mut hasher);
+        let id = format!("{:x}", hasher.finish());
+        let event_name = format!("update_watch_{}", id);
+        let _ = app.emit_all(event_name.as_str(), EmitWatched { watched });
+    }
+}
+
 #[tauri::command]
 fn set_watched(
     app: AppHandle,
@@ -150,6 +162,7 @@ fn set_watched(
         format!("update_watch_{}", file.id.clone()).as_str(),
         EmitWatched { watched },
     );
+    emit_folder_watched(app, file.path(), watched);
     gui::update_watched(connection, videos, file, watched)
 }
 
