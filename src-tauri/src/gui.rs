@@ -4,19 +4,20 @@ use std::path::{Path, PathBuf};
 use native_dialog::FileDialog;
 use rusqlite::Connection;
 
-use crate::database;
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
 use crate::state::{ThumbnailCache, VideoCache};
 use crate::video::{VideoEntry, VideoMetadata};
+use crate::{database, EmitProgress};
 
 pub fn file_scan(
     path: String,
     cache: &mut VideoCache,
     x: &HashMap<String, VideoEntry>,
+    emitter: impl Fn(EmitProgress),
 ) -> Result<Response<FolderInfo>, ()> {
     let mut scan = FileScan::new(Path::new(path.as_str()), Some(cache));
-    let result = scan.run();
+    let result = scan.run(&emitter);
     let response = match result {
         Ok(mut folder_info) => {
             folder_info.add_meta(x);
@@ -56,12 +57,13 @@ pub fn get_folders(
     folders: &Vec<String>,
     cache: &mut VideoCache,
     entries: &HashMap<String, VideoEntry>,
+    emitter: impl Fn(EmitProgress),
 ) -> Result<Response<Vec<FolderInfo>>, ()> {
     let mut folder_infos = Vec::new();
     for folder in folders.into_iter() {
         let path = Path::new(&folder);
         let mut scan = FileScan::new(path, Some(cache));
-        let folder_scan = scan.run();
+        let folder_scan = scan.run(&emitter);
         if let Ok(mut folder_info) = folder_scan {
             folder_info.add_meta(entries);
             folder_infos.push(folder_info);

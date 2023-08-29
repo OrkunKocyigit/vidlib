@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
 use crate::state::{VideoCache, VideoCacheItem};
-use crate::video;
 use crate::video::{is_video, VideoEntry, VideoMetadata};
+use crate::{video, EmitProgress};
 
 const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
 
@@ -152,16 +152,44 @@ impl FolderInfo {
         self.videos.push(video);
     }
 
-    pub fn read_folder(&mut self, c: &mut Option<&mut VideoCache>) {
+    fn count_files_in_folder(&self, emitter: &impl Fn(EmitProgress)) -> usize {
+        let count = read_dir(&self.path).map_or(0, |entries| {
+            entries
+                .filter_map(Result::ok)
+                .filter(|entry| {
+                    entry
+                        .metadata()
+                        .map_or(false, |m| m.is_file() && is_video(entry.path()))
+                })
+                .count()
+        });
+        emitter(EmitProgress {
+            total: Some(count),
+            name: None,
+        });
+        return count;
+    }
+
+    pub fn read_folder(
+        &mut self,
+        c: &mut Option<&mut VideoCache>,
+        emitter: &impl Fn(EmitProgress),
+    ) {
+        let _ = &self.count_files_in_folder(&emitter);
         if let Ok(entries) = read_dir(&self.path) {
             for entry in entries.filter_map(Result::ok) {
                 let path = entry.path();
                 if path.is_file() && is_video(&path) {
-                    self.push_video(VideoFile::new(path, self.depth, c));
+                    let video_file = VideoFile::new(path, self.depth, c);
+                    emitter(EmitProgress {
+                        name: Some(video_file.name().to_string()),
+                        total: None,
+                    });
+                    self.push_video(video_file);
                     self.empty = false;
                 } else if path.is_dir() && !is_hidden(&entry) {
                     let mut folder = FolderInfo::new(path, self.depth + 1);
-                    folder.read_folder(c);
+                    folder.read_folder(c, emitter);
                     self.push_folder(folder);
                     self.empty = false;
                 }
@@ -191,14 +219,14 @@ impl<'a> FileScan<'a> {
         }
     }
 
-    pub fn run(&mut self) -> Result<FolderInfo, &str> {
+    pub fn run(&mut self, emitter: &impl Fn(EmitProgress)) -> Result<FolderInfo, &str> {
         let is_dir = &self.path.is_dir();
         if !is_dir {
             return Err("Invalid path");
         }
 
         let mut root = FolderInfo::new(&self.path, 0);
-        root.read_folder(&mut self.cache);
+        root.read_folder(&mut self.cache, emitter);
 
         Ok(root)
     }

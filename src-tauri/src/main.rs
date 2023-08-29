@@ -24,10 +24,22 @@ mod state;
 mod video;
 
 #[tauri::command]
-fn file_scan(state: State<AppState>, path: String) -> Result<Response<FolderInfo>, ()> {
+fn file_scan(
+    app: AppHandle,
+    state: State<AppState>,
+    path: String,
+) -> Result<Response<FolderInfo>, ()> {
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
-    let response = gui::file_scan(path, cache, state.videos.lock().unwrap().as_ref().unwrap());
+    let emitter = |progress: EmitProgress| {
+        let _ = app.emit_all("add_progress", progress);
+    };
+    let response = gui::file_scan(
+        path,
+        cache,
+        state.videos.lock().unwrap().as_ref().unwrap(),
+        emitter,
+    );
     cache.commit(state.db.lock().unwrap().as_ref().unwrap());
     response
 }
@@ -38,16 +50,20 @@ fn select_folder() -> Result<Response<PathBuf>, ()> {
 }
 
 #[tauri::command]
-fn get_folders(state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Error> {
+fn get_folders(app: AppHandle, state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Error> {
     let db_guard = state.db.lock().unwrap();
     let db = db_guard.as_ref().unwrap();
     let folders = database::get_paths(&db).expect("Paths not found");
     let mut cache_guard = state.video_cache.lock().unwrap();
     let cache = cache_guard.as_mut().unwrap();
+    let emitter = |progress: EmitProgress| {
+        let _ = app.emit_all("add_progress", progress);
+    };
     let response = gui::get_folders(
         &folders,
         cache,
         state.videos.lock().unwrap().as_ref().unwrap(),
+        emitter,
     );
     cache.commit(db);
     if response.is_ok() {
@@ -58,13 +74,25 @@ fn get_folders(state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Erro
 }
 
 #[tauri::command]
-fn add_folder(state: State<AppState>, path: String) -> Result<Response<FolderInfo>, ()> {
+fn add_folder(
+    app: AppHandle,
+    state: State<AppState>,
+    path: String,
+) -> Result<Response<FolderInfo>, ()> {
     let db_guard = state.db.lock().unwrap();
     let db = db_guard.as_ref().unwrap();
     database::add_path(db, &path).expect("Paths not found");
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
-    let response = gui::file_scan(path, cache, state.videos.lock().unwrap().as_ref().unwrap());
+    let emitter = |progress: EmitProgress| {
+        let _ = app.emit_all("add_progress", progress);
+    };
+    let response = gui::file_scan(
+        path,
+        cache,
+        state.videos.lock().unwrap().as_ref().unwrap(),
+        emitter,
+    );
     cache.commit(db);
     response
 }
@@ -200,6 +228,12 @@ struct EmitWatched {
 #[derive(Clone, Serialize)]
 struct EmitPathDeleted {
     path: String,
+}
+
+#[derive(Clone, Serialize)]
+pub struct EmitProgress {
+    total: Option<usize>,
+    name: Option<String>,
 }
 
 fn main() {
