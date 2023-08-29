@@ -550,10 +550,10 @@ Section Install
   {{/each}}
 
   ; Add gstreamer to path
-  !if "$GStreamerPath" != ""
+  ${If} $GStreamerPath != ""
     DetailPrint 'Adding gstreamer to path: "$GStreamerPath"'
     ExecWait '$INSTDIR\PathEd.exe add "$GStreamerPath1.0\msvc_x86_64\bin"'
-  !endif
+  ${EndIf}
 
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\uninstall.exe"
