@@ -8,8 +8,8 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
-use crate::database;
 use crate::video::VideoEntry;
+use crate::{database, EmitProgress};
 
 pub struct ThumbnailCache {
     base_dir: PathBuf,
@@ -156,4 +156,40 @@ pub fn get_video_cache(connection: &Connection) -> VideoCache {
     let mut cache = VideoCache::new();
     let _ = database::get_video_cache_items(connection).and_then(|items| Ok(cache.items = items));
     cache
+}
+
+#[derive(Clone, Serialize)]
+pub struct EmitTotalProgress {
+    current: usize,
+    total: usize,
+    progress: f64,
+    name: Option<String>,
+}
+
+impl EmitTotalProgress {
+    pub fn new() -> Self {
+        Self {
+            current: 0,
+            total: 0,
+            progress: 0.0f64,
+            name: None,
+        }
+    }
+
+    pub fn process(&mut self, emit: EmitProgress) {
+        if let Some(t) = emit.total {
+            self.total += t;
+        }
+        if let Some(n) = emit.name {
+            self.name = Some(n);
+        }
+        if !emit.folder {
+            self.current += 1;
+        }
+        self.update_progress();
+    }
+
+    fn update_progress(&mut self) {
+        self.progress = (self.current as f64 / self.total.max(1) as f64) * 100.0;
+    }
 }

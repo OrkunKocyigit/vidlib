@@ -4,6 +4,8 @@
 #[macro_use]
 extern crate derive_builder;
 
+use std::cell::RefCell;
+use std::ops::Deref;
 use std::path::PathBuf;
 
 use gstreamer::init;
@@ -13,7 +15,7 @@ use tauri::{AppHandle, Error, Manager, State};
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
-use crate::state::AppState;
+use crate::state::{AppState, EmitTotalProgress};
 use crate::video::VideoMetadata;
 
 mod database;
@@ -31,8 +33,10 @@ fn file_scan(
 ) -> Result<Response<FolderInfo>, ()> {
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
+    let total = RefCell::new(EmitTotalProgress::new());
     let emitter = |progress: EmitProgress| {
-        let _ = app.emit_all("add_progress", progress);
+        total.borrow_mut().process(progress);
+        let _ = app.emit_all("add_progress", total.borrow().deref());
     };
     let response = gui::file_scan(
         path,
@@ -56,8 +60,10 @@ fn get_folders(app: AppHandle, state: State<AppState>) -> Result<Response<Vec<Fo
     let folders = database::get_paths(&db).expect("Paths not found");
     let mut cache_guard = state.video_cache.lock().unwrap();
     let cache = cache_guard.as_mut().unwrap();
+    let total = RefCell::new(EmitTotalProgress::new());
     let emitter = |progress: EmitProgress| {
-        let _ = app.emit_all("add_progress", progress);
+        total.borrow_mut().process(progress);
+        let _ = app.emit_all("add_progress", total.borrow().deref());
     };
     let response = gui::get_folders(
         &folders,
@@ -84,8 +90,10 @@ fn add_folder(
     database::add_path(db, &path).expect("Paths not found");
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
+    let total = RefCell::new(EmitTotalProgress::new());
     let emitter = |progress: EmitProgress| {
-        let _ = app.emit_all("add_progress", progress);
+        total.borrow_mut().process(progress);
+        let _ = app.emit_all("add_progress", total.borrow().deref());
     };
     let response = gui::file_scan(
         path,
@@ -234,6 +242,7 @@ struct EmitPathDeleted {
 pub struct EmitProgress {
     total: Option<usize>,
     name: Option<String>,
+    folder: bool,
 }
 
 fn main() {

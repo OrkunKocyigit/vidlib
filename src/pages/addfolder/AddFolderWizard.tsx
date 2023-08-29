@@ -15,7 +15,8 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
   const { t } = useTranslation();
   const [current, setCurrent] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
-  const [name, setName] = useState<string>('');
+  const [name, setName] = useState<string | undefined>();
+  const [progress, setProgress] = useState<number>(0);
 
   function scanFolder(): void {
     setCurrent(0);
@@ -33,12 +34,15 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
   useEffect(() => {
     const unlisten = listen(
       'add_progress',
-      ({ payload }: { payload: { total?: number; name?: string } }) => {
-        setTotal((prevState) => prevState + (payload.total ?? 0));
-        if (payload.name !== undefined) {
-          setName(payload.name);
-          setCurrent((prevState) => prevState + 1);
-        }
+      ({
+        payload
+      }: {
+        payload: { current: number; total: number; progress: number; name?: string };
+      }) => {
+        setCurrent(payload.current);
+        setTotal(payload.total);
+        setProgress(payload.progress);
+        setName(payload.name);
       }
     );
     return () => {
@@ -56,14 +60,16 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
     <Stack>
       {total > 0 ? (
         <>
-          <Text truncate={'end'} size={'sm'}>
-            {name}
-          </Text>
+          {name !== undefined ? (
+            <Text truncate={'end'} size={'sm'}>
+              {name}
+            </Text>
+          ) : null}
           <Progress
             color="green"
             radius="md"
             size="xl"
-            value={Math.min(1, Math.max(0, current / total)) * 100}
+            value={progress}
             label={`${current} / ${total}`}
             striped
             animate

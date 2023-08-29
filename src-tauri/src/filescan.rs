@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{read_dir, DirEntry, File};
+use std::fs::{read_dir, read_link, symlink_metadata, DirEntry, File};
 use std::hash::Hasher;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::os::windows::prelude::MetadataExt;
@@ -155,19 +155,27 @@ impl FolderInfo {
     fn count_files_in_folder(&self, emitter: &impl Fn(EmitProgress)) -> usize {
         let count = read_dir(&self.path).map_or(0, |entries| {
             entries
-                .filter_map(Result::ok)
+                .filter_map(|entry| entry.ok())
                 .filter(|entry| {
-                    entry
-                        .metadata()
-                        .map_or(false, |m| m.is_file() && is_video(entry.path()))
+                    let path = if symlink_metadata(entry.path())
+                        .unwrap()
+                        .file_type()
+                        .is_symlink()
+                    {
+                        read_link(entry.path()).unwrap()
+                    } else {
+                        entry.path()
+                    };
+                    path.metadata().unwrap().is_file() && is_video(path)
                 })
                 .count()
         });
         emitter(EmitProgress {
             total: Some(count),
-            name: None,
+            name: Some(self.path.display().to_string()),
+            folder: true,
         });
-        return count;
+        count
     }
 
     pub fn read_folder(
@@ -184,6 +192,7 @@ impl FolderInfo {
                     emitter(EmitProgress {
                         name: Some(video_file.name().to_string()),
                         total: None,
+                        folder: false,
                     });
                     self.push_video(video_file);
                     self.empty = false;
