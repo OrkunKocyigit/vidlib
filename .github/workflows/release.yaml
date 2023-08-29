@@ -35,7 +35,9 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
       - name: install dependencies (Windows only)
         if: matrix.platform == 'windows-latest'
-        run: choco --yes install gstreamer gstreamer-devel
+        run: |
+          choco install --yes gstreamer gstreamer-devel
+          Add-Content $env:GITHUB_PATH "C:\gstreamer\1.0\msvc_x86_64\bin"
       - name: install frontend dependencies
         run: pnpm install
       - uses: tauri-apps/tauri-action@v0
