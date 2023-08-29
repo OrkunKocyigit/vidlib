@@ -5,13 +5,11 @@ use rusqlite::{named_params, Connection, Error};
 use tauri::AppHandle;
 
 use crate::state::VideoCacheItem;
+use crate::util::get_app_dir;
 use crate::video::VideoEntry;
 
 pub fn load_database(app_handle: &AppHandle) -> Result<Connection, Error> {
-    let path = app_handle
-        .path_resolver()
-        .app_data_dir()
-        .expect("App data directory does not exist");
+    let path = get_app_dir(app_handle);
     fs::create_dir_all(&path).expect("App data directory creation failed");
     let sqlite = path.join("profile.sqlite");
     let mut db = Connection::open(sqlite)?;

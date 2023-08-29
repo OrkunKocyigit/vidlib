@@ -8,6 +8,7 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
+use crate::util::get_app_dir;
 use crate::video::VideoEntry;
 use crate::{database, EmitProgress};
 
@@ -128,10 +129,7 @@ pub struct AppState {
 }
 
 pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
-    let path = app_handle
-        .path_resolver()
-        .app_data_dir()
-        .expect("App data directory does not exist");
+    let path = get_app_dir(app_handle);
     fs::create_dir_all(&path).expect("App data directory creation failed");
     let thumbnail_path = path.join("thumbnail");
     fs::create_dir_all(&thumbnail_path).expect("Thumbnail folder creation failed");

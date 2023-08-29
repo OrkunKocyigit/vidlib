@@ -23,6 +23,7 @@ mod filescan;
 mod gui;
 mod service;
 mod state;
+mod util;
 mod video;
 
 #[tauri::command]
