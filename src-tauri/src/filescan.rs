@@ -125,6 +125,7 @@ pub struct FolderInfo {
     name: String,
     empty: bool,
     depth: usize,
+    watched: bool,
 }
 
 impl FolderInfo {
@@ -147,6 +148,7 @@ impl FolderInfo {
             name,
             empty: true,
             depth,
+            watched: false,
         }
     }
 
@@ -218,6 +220,12 @@ impl FolderInfo {
             .iter_mut()
             .for_each(|v| v.update_meta(p0.get(&v.id)));
         let _ = &self.folders.iter_mut().for_each(|f| f.add_meta(p0));
+        self.watched = self
+            .videos
+            .iter()
+            .map(|e| e.watched)
+            .reduce(|acc, b| acc && b)
+            .unwrap_or(false);
     }
 }
 

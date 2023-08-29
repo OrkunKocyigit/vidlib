@@ -6,6 +6,7 @@ export interface IFolderInfo extends IFileInfo {
   folders: IFolderInfo[];
   videos: IVideoFile[];
   empty: boolean;
+  watched: boolean;
 }
 
 export class FolderInfo extends FileInfo implements IFolderInfo {
@@ -13,6 +14,7 @@ export class FolderInfo extends FileInfo implements IFolderInfo {
   folders: FolderInfo[];
   videos: VideoFile[];
   id: string;
+  watched: boolean;
 
   constructor(
     depth: number,
@@ -21,17 +23,19 @@ export class FolderInfo extends FileInfo implements IFolderInfo {
     empty: boolean,
     folders: IFolderInfo[],
     videos: IVideoFile[],
-    id: string
+    id: string,
+    watched: boolean
   ) {
     super(depth, name, path);
     this.empty = empty;
     this.folders = folders.map(
-      ({ depth, name, path, empty, folders, videos, id }) =>
-        new FolderInfo(depth, name, path, empty, folders, videos, id)
+      ({ depth, name, path, empty, folders, videos, id, watched }) =>
+        new FolderInfo(depth, name, path, empty, folders, videos, id, watched)
     );
     this.videos = videos.map(
       ({ id, depth, name, path, watched }) => new VideoFile(depth, name, path, id, watched)
     );
     this.id = id;
+    this.watched = watched;
   }
 }

@@ -68,7 +68,7 @@ function renderFolderIcon(folder: FolderInfo, state: boolean): JSX.Element | nul
 function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   const { folder, showDelete } = useComponentDefaultProps('FolderInfo', defaultProps, props);
   const [opened, { toggle }] = useDisclosure(false);
-  const [variant, setVariant] = useState<FolderInfoViewVariants>();
+  const [variant, setVariant] = useState<FolderInfoViewVariants>(getVariant(props.folder.watched));
   const { classes } = useStyles({ variant });
   const showContextMenu = useContextMenu();
   const { t } = useTranslation();
@@ -113,9 +113,17 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
     });
   }
 
+  function getVariant(watched: boolean): FolderInfoViewVariants {
+    if (watched) {
+      return 'watched';
+    } else {
+      return undefined;
+    }
+  }
+
   useEffect(() => {
     const eventName = `update_watch_${props.folder.id}`;
-    const unlisten = listen(eventName, ({ payload }: { payload: { watched: boolean } }) => {
+    const unlisten = listen(eventName, () => {
       let watched;
       if (props.folder.videos.length <= 0) {
         watched = false;
@@ -124,11 +132,7 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
           .map((value) => value.watched)
           .reduce((previousValue, currentValue) => previousValue && currentValue, true);
       }
-      if (watched) {
-        setVariant('watched');
-      } else {
-        setVariant(undefined);
-      }
+      setVariant(getVariant(watched));
     });
     return () => {
       unlisten
