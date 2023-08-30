@@ -3,6 +3,8 @@
 
 #[macro_use]
 extern crate derive_builder;
+#[macro_use]
+extern crate log;
 
 use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
@@ -34,6 +36,7 @@ fn file_scan(
     state: State<AppState>,
     path: String,
 ) -> Result<Response<FolderInfo>, ()> {
+    debug!("File Scan Start");
     let mut guard = state.video_cache.lock().unwrap();
     let cache = guard.as_mut().unwrap();
     let total = RefCell::new(EmitTotalProgress::new());
@@ -48,16 +51,19 @@ fn file_scan(
         emitter,
     );
     cache.commit(state.db.lock().unwrap().as_ref().unwrap());
+    debug!("File Scan End");
     response
 }
 
 #[tauri::command]
 fn select_folder() -> Result<Response<PathBuf>, ()> {
+    debug!("Select Folder Start");
     gui::select_folder()
 }
 
 #[tauri::command]
 fn get_folders(app: AppHandle, state: State<AppState>) -> Result<Response<Vec<FolderInfo>>, Error> {
+    debug!("Get Folders Start");
     let db_guard = state.db.lock().unwrap();
     let db = db_guard.as_ref().unwrap();
     let folders = database::get_paths(&db).expect("Paths not found");
@@ -75,6 +81,7 @@ fn get_folders(app: AppHandle, state: State<AppState>) -> Result<Response<Vec<Fo
         emitter,
     );
     cache.commit(db);
+    debug!("Get Folders End");
     if response.is_ok() {
         Ok(response.unwrap())
     } else {
@@ -88,6 +95,7 @@ fn add_folder(
     state: State<AppState>,
     path: String,
 ) -> Result<Response<FolderInfo>, ()> {
+    debug!("Add Folder Start");
     let db_guard = state.db.lock().unwrap();
     let db = db_guard.as_ref().unwrap();
     database::add_path(db, &path).expect("Paths not found");
@@ -105,11 +113,13 @@ fn add_folder(
         emitter,
     );
     cache.commit(db);
+    debug!("Add Folder End");
     response
 }
 
 #[tauri::command]
 fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<VideoFile>, ()> {
+    debug!("Get Video Start");
     let mut videos_guard = state.videos.lock().unwrap();
     let videos = videos_guard.as_mut().unwrap();
     let connection_guard = state.db.lock().unwrap();
@@ -119,6 +129,7 @@ fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<Vi
 
 #[tauri::command]
 fn get_thumbnail(state: State<AppState>, video: VideoFile) -> Result<Response<Vec<PathBuf>>, ()> {
+    debug!("Get Thumbnails Start");
     let mut thumbnails_guard = state.thumbnail_cache.lock().unwrap();
     let thumbnails = thumbnails_guard.as_mut().unwrap();
     gui::get_thumbnail(video, thumbnails)
@@ -130,6 +141,7 @@ fn set_video_rating(
     file: VideoFile,
     rating: usize,
 ) -> Result<Response<usize>, ()> {
+    debug!("Set Video Rating Start");
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
     let mut videos_guard = state.videos.lock().unwrap();
@@ -154,6 +166,7 @@ fn set_watched(
     file: VideoFile,
     watched: bool,
 ) -> Result<Response<bool>, ()> {
+    debug!("Set Watched Start");
     let connection_guard = state.db.lock().unwrap();
     let connection = connection_guard.as_ref().unwrap();
     let mut videos_guard = state.videos.lock().unwrap();
@@ -172,6 +185,7 @@ fn set_video_name(
     file: VideoFile,
     name: String,
 ) -> Result<Response<String>, ()> {
+    debug!("Set Video Name Start");
     gui::update_name(
         state.db.lock().unwrap().as_ref().unwrap(),
         state.videos.lock().unwrap().as_mut().unwrap(),
@@ -186,6 +200,7 @@ fn set_video_notes(
     file: VideoFile,
     notes: String,
 ) -> Result<Response<String>, ()> {
+    debug!("Set Video Notes Start");
     gui::update_notes(
         state.db.lock().unwrap().as_ref().unwrap(),
         state.videos.lock().unwrap().as_mut().unwrap(),
@@ -196,16 +211,19 @@ fn set_video_notes(
 
 #[tauri::command]
 fn open_video(video: VideoFile) -> () {
+    debug!("Open Video Start");
     opener::open(video.path()).unwrap();
 }
 
 #[tauri::command]
 async fn get_metadata(video: VideoFile) -> Result<Response<VideoMetadata>, ()> {
+    debug!("Get Metadata Start");
     gui::get_metadata(&video).await
 }
 
 #[tauri::command]
 fn delete_path(app: AppHandle, state: State<AppState>, path: &str) -> Result<Response<bool>, ()> {
+    debug!("Delete Path Start");
     let mut db_guard = state.db.lock().unwrap();
     let db = db_guard.as_mut().unwrap();
     if let Err(e) = gui::validate_path(&db, &path) {
@@ -228,6 +246,7 @@ fn delete_path(app: AppHandle, state: State<AppState>, path: &str) -> Result<Res
 
 #[tauri::command]
 fn open_path(path: &str, parent: bool) {
+    debug!("Open Path Start");
     let path_buf = PathBuf::from(path);
     let path = if parent {
         let parent_path = path_buf.parent().unwrap();
@@ -264,6 +283,12 @@ fn main() {
             thumbnail_cache: Default::default(),
             video_cache: Default::default(),
         })
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .targets(util::get_log_targets())
+                .level(util::get_log_level())
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             file_scan,
             select_folder,
