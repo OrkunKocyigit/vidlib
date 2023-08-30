@@ -14,7 +14,7 @@ export default createStyles((theme, { variant }: FolderInfoViewStyleProps) => ({
     color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
     backgroundColor:
       variant === 'watched'
-        ? theme.colors.green[1]
+        ? theme.colors.green[0]
         : theme.colorScheme === 'light'
         ? 'white'
         : theme.colors.dark[0],
@@ -24,7 +24,7 @@ export default createStyles((theme, { variant }: FolderInfoViewStyleProps) => ({
     '&:hover': {
       backgroundColor:
         variant === 'watched'
-          ? theme.colors.green[7]
+          ? theme.colors.green[4]
           : theme.colorScheme === 'dark'
           ? theme.colors.dark[7]
           : theme.colors.gray[0],

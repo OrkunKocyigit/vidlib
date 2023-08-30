@@ -14,12 +14,22 @@ export interface VideoFileViewProps extends React.ComponentPropsWithoutRef<'div'
 }
 function VideoFileView(props: VideoFileViewProps): JSX.Element {
   const videoContext = useContext<IVideoContext>(VideoContext);
-  const getVariant = useCallback(
-    (watched?: boolean): VideoFileViewVariants => {
-      return watched === true ? 'watched' : undefined;
-    },
-    [props.video.watched]
-  );
+  const getVariant = (watched?: boolean, selected?: boolean): VideoFileViewVariants => {
+    if (selected === true) {
+      if (watched === true) {
+        return 'selectedwatched';
+      } else {
+        return 'selected';
+      }
+    } else {
+      if (watched === true) {
+        return 'watched';
+      } else {
+        return undefined;
+      }
+    }
+  };
+
   const { t } = useTranslation();
   const showContextMenu = useContextMenu();
 
@@ -28,7 +38,6 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
       `update_watch_${props.video.id}`,
       ({ payload }: { payload: { watched: boolean } }) => {
         props.video.watched = payload.watched;
-        setVariant(getVariant(payload.watched));
       }
     );
     return () => {
@@ -41,7 +50,10 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
         });
     };
   }, []);
-  const [variant, setVariant] = useState(getVariant(props.video.watched));
+  useEffect(() => {
+    setVariant(getVariant(props.video.watched, props.video.id === videoContext.video?.id));
+  }, [props.video.watched, props.video.id, videoContext.video?.id]);
+  const [variant, setVariant] = useState<VideoFileViewVariants>(undefined);
   const { classes } = useStyles({ variant });
 
   function updateVideo(): void {

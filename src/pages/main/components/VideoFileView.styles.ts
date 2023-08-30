@@ -1,9 +1,36 @@
-import { createStyles } from '@mantine/core';
+import { createStyles, type MantineTheme } from '@mantine/core';
+import { type FolderInfoViewVariants } from './FolderInfoView.styles';
 
-export type VideoFileViewVariants = 'watched' | undefined;
+export type VideoFileViewVariants = 'selected' | 'selectedwatched' | FolderInfoViewVariants;
 
 export interface VideoFileViewStyleProps {
   variant: VideoFileViewVariants;
+}
+
+function getBackgroundColor(variant: VideoFileViewVariants, theme: MantineTheme): string {
+  if (variant === 'watched') {
+    return theme.colors.green[0];
+  } else if (variant === 'selectedwatched') {
+    return theme.colors.green[3];
+  } else if (theme.colorScheme === 'light') {
+    if (variant === 'selected') {
+      return theme.colors.gray[0];
+    } else {
+      return 'white';
+    }
+  } else {
+    return theme.colors.dark[0];
+  }
+}
+
+function getHoverBackgroundColor(variant: VideoFileViewVariants, theme: MantineTheme): string {
+  if (variant === 'watched' || variant === 'selectedwatched') {
+    return theme.colors.green[5];
+  } else if (theme.colorScheme === 'dark') {
+    return theme.colors.dark[7];
+  } else {
+    return theme.colors.gray[2];
+  }
 }
 
 export default createStyles((theme, { variant }: VideoFileViewStyleProps) => ({
@@ -13,22 +40,12 @@ export default createStyles((theme, { variant }: VideoFileViewStyleProps) => ({
     width: '100%',
     padding: `${theme.spacing.xs} ${theme.spacing.md}`,
     color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-    backgroundColor:
-      variant === 'watched'
-        ? theme.colors.green[1]
-        : theme.colorScheme === 'light'
-        ? 'white'
-        : theme.colors.dark[0],
+    backgroundColor: getBackgroundColor(variant, theme),
     fontSize: theme.fontSizes.sm,
     whiteSpace: 'nowrap',
 
     '&:hover': {
-      backgroundColor:
-        variant === 'watched'
-          ? theme.colors.green[7]
-          : theme.colorScheme === 'dark'
-          ? theme.colors.dark[7]
-          : theme.colors.gray[0],
+      backgroundColor: getHoverBackgroundColor(variant, theme),
       color: theme.colorScheme === 'dark' || variant === 'watched' ? theme.white : theme.black
     }
   },
