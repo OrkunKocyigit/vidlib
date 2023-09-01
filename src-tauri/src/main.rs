@@ -210,9 +210,9 @@ fn set_video_notes(
 }
 
 #[tauri::command]
-fn open_video(video: VideoFile) -> () {
+fn open_video(video: VideoFile) -> Result<Response<()>, ()> {
     debug!("Open Video Start");
-    opener::open(video.path()).unwrap();
+    gui::open_video(video)
 }
 
 #[tauri::command]

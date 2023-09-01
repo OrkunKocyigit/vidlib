@@ -246,3 +246,24 @@ pub(crate) fn delete_path(
         }
     }
 }
+
+pub(crate) fn open_video(v: VideoFile) -> Result<Response<()>, ()> {
+    let path = v.path();
+    debug!("Checking for video path: {}", path.display());
+    if path.exists() && path.is_file() {
+        debug!("File exists");
+        match opener::open(path) {
+            Ok(_) => {
+                debug!("File opened");
+                Ok(wrap_success(()))
+            }
+            Err(e) => {
+                error!("Opener failed with error {}", e);
+                Ok(wrap_failure(e.to_string()))
+            }
+        }
+    } else {
+        error!("File not found");
+        Ok(wrap_failure("File not found".into()))
+    }
+}
