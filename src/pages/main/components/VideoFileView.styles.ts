@@ -14,7 +14,7 @@ function getBackgroundColor(variant: VideoFileViewVariants, theme: MantineTheme)
     return theme.colors.green[3];
   } else if (theme.colorScheme === 'light') {
     if (variant === 'selected') {
-      return theme.colors.gray[0];
+      return theme.colors.gray[1];
     } else {
       return 'white';
     }
