@@ -20,7 +20,8 @@ function SideBar({ folders, openWizard }: Props): JSX.Element {
       width={{
         base: '30%'
       }}
-      className={classes.navbar}>
+      className={classes.navbar}
+    >
       <Navbar.Section className={classes.header}>
         <SearchBar>
           <ActionIcon
@@ -28,7 +29,8 @@ function SideBar({ folders, openWizard }: Props): JSX.Element {
             radius="xl"
             color={theme.primaryColor}
             variant="filled"
-            onClick={openWizard}>
+            onClick={openWizard}
+          >
             <IconPlus size="1.1rem" stroke={1.5} />
           </ActionIcon>
         </SearchBar>

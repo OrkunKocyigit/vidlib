@@ -30,7 +30,8 @@ function VideoName(props: VideoNameProps): JSX.Element {
       titleProps={{ order: 4 }}
       editButtonProps={{ color: 'blue' }}
       saveButtonProps={{ color: 'green' }}
-      cancelButtonProps={{ color: 'red' }}></UpdatableText>
+      cancelButtonProps={{ color: 'red' }}
+    ></UpdatableText>
   );
 }
 

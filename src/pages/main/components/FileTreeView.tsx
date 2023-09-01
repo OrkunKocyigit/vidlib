@@ -24,7 +24,8 @@ function FileTreeView(props: FileTreeViewProps): JSX.Element {
         <FolderInfoView
           folder={folder}
           key={`${folder.path}_${folder.depth}`}
-          showDelete={showDelete}></FolderInfoView>
+          showDelete={showDelete}
+        ></FolderInfoView>
       ))}
     </div>
   );

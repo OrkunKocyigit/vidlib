@@ -35,7 +35,8 @@ function VideoThumbnail(props: VideoThumbnailProps): JSX.Element {
       mr={'md'}
       sx={(theme) => ({
         backgroundColor: theme.colorScheme === 'dark' ? 'white' : 'black'
-      })}>
+      })}
+    >
       <Image
         width={'10rem'}
         height={'10rem'}
@@ -44,7 +45,8 @@ function VideoThumbnail(props: VideoThumbnailProps): JSX.Element {
         radius={'md'}
         placeholder={<Text align={'center'}>Thumbnail</Text>}
         withPlaceholder
-        src={imageUrl(imageSrc)}></Image>
+        src={imageUrl(imageSrc)}
+      ></Image>
     </Box>
   );
 }

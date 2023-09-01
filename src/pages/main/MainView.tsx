@@ -63,7 +63,8 @@ function MainView(): JSX.Element {
           <VideoContext.Provider value={videoContext}>
             <SideBar folders={folders} openWizard={open}></SideBar>
           </VideoContext.Provider>
-        }>
+        }
+      >
         <VideoView video={video}></VideoView>
       </AppShell>
       <Modal opened={wizardOpened} onClose={close} withCloseButton={false} centered>

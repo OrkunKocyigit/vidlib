@@ -150,7 +150,8 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
       <UnstyledButton
         onClick={toggle}
         className={classes.control}
-        onContextMenu={showContextMenu(contextMenu())}>
+        onContextMenu={showContextMenu(contextMenu())}
+      >
         <Group spacing={0} noWrap>
           <Flex align={'center'} mr={'auto'} pr={'md'}>
             <ThemeIcon size={20} variant={'outline'}>

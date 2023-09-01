@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { Box, Flex, Group, ThemeIcon, UnstyledButton } from '@mantine/core';
 import { IconFolderOpen, IconVideo } from '@tabler/icons-react';
@@ -80,7 +80,8 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
             openPath();
           }
         }
-      ])}>
+      ])}
+    >
       <UnstyledButton onClick={updateVideo} className={classes.control}>
         <Group position={'apart'} spacing={0}>
           <Flex align={'center'}>

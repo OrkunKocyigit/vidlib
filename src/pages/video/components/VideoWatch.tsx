@@ -39,7 +39,8 @@ function VideoWatch(props: VideoWatchProps): JSX.Element {
             color={'green'}
             onClick={() => {
               updateWatched(props.video, false);
-            }}>
+            }}
+          >
             <IconCheck></IconCheck>
           </ActionIcon>
           <Text>{t('video.watch.watched')}</Text>
@@ -50,7 +51,8 @@ function VideoWatch(props: VideoWatchProps): JSX.Element {
             color={'red'}
             onClick={() => {
               updateWatched(props.video, true);
-            }}>
+            }}
+          >
             <IconX></IconX>
           </ActionIcon>
           <Text>{t('video.watch.not.watched')}</Text>

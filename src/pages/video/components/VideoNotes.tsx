@@ -52,7 +52,8 @@ function VideoNotes(props: VideoNotesProps): JSX.Element {
           onSaveButtonClick={onSaveNotes}
           saveButtonProps={{ color: 'green' }}
           onCancelButtonClick={onCancelNotes}
-          cancelButtonProps={{ color: 'red' }}></EditableButtons>
+          cancelButtonProps={{ color: 'red' }}
+        ></EditableButtons>
       </Group>
       {editable ? (
         <Textarea
@@ -63,7 +64,8 @@ function VideoNotes(props: VideoNotesProps): JSX.Element {
           autosize
           onChange={(e) => {
             setNotes(e.target.value);
-          }}></Textarea>
+          }}
+        ></Textarea>
       ) : (
         <Text className={classes.text}>{notes}</Text>
       )}
