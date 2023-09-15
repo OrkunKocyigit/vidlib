@@ -85,18 +85,6 @@ impl VideoFile {
         self.video = video;
     }
 
-    pub fn create_thumbnails<P: AsRef<Path>>(
-        &self,
-        path: &P,
-    ) -> Result<Vec<PathBuf>, anyhow::Error> {
-        let p = path.as_ref().to_path_buf();
-        let image = p.join(format!("{}_01.png", &self.id));
-        let video_url = url::Url::from_file_path(&self.path).expect("Video can't be opened");
-        let pipeline = video::create_thumbnail_video_pipeline(video_url, &image)?;
-        video::create_thumbnail(pipeline)?;
-        Ok(vec![image])
-    }
-
     pub fn path(&self) -> &PathBuf {
         &self.path
     }

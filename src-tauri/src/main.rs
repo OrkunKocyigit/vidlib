@@ -12,6 +12,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::path::PathBuf;
 
+use anyhow::Context;
 use gstreamer::init;
 use serde::Serialize;
 use tauri::{AppHandle, Error, Manager, State};
@@ -23,10 +24,12 @@ use crate::state::{AppState, EmitTotalProgress};
 use crate::video::VideoMetadata;
 
 mod database;
+mod ffmpeg_decoder;
 mod filescan;
 mod gui;
 mod service;
 mod state;
+mod thumbnail;
 mod util;
 mod video;
 
@@ -128,11 +131,26 @@ fn get_video(state: State<AppState>, mut video: VideoFile) -> Result<Response<Vi
 }
 
 #[tauri::command]
-fn get_thumbnail(state: State<AppState>, video: VideoFile) -> Result<Response<Vec<PathBuf>>, ()> {
+async fn get_thumbnail(
+    state: State<'_, AppState>,
+    id: String,
+    path: &str,
+) -> Result<Response<Option<Vec<PathBuf>>>, ()> {
     debug!("Get Thumbnails Start");
-    let mut thumbnails_guard = state.thumbnail_cache.lock().unwrap();
-    let thumbnails = thumbnails_guard.as_mut().unwrap();
-    gui::get_thumbnail(video, thumbnails)
+    let thumbnail = thumbnail::find_thumbnail_path_in_cache(&state, &id);
+    if let Some(t) = thumbnail {
+        debug!(
+            "Thumbnail found at location {}. Returning",
+            t.get(0)
+                .map(|p| p.display().to_string())
+                .unwrap_or("".into())
+        );
+        Ok(gui::wrap_success(Some(t)))
+    } else {
+        debug!("Thumbnail not found, it will be created");
+        state.thumbnail_channel.lock().await;
+        todo!()
+    }
 }
 
 #[tauri::command]
@@ -276,12 +294,16 @@ pub struct EmitProgress {
 
 fn main() {
     init().unwrap();
+    let (thumbnail_input_tx, thumbnail_input_rx) = tokio::sync::mpsc::channel(1);
+    let (thumbnail_output_tx, thumbnail_output_rx) = tokio::sync::mpsc::channel(1);
+
     tauri::Builder::default()
         .manage(AppState {
             db: Default::default(),
             videos: Default::default(),
             thumbnail_cache: Default::default(),
             video_cache: Default::default(),
+            thumbnail_channel: tokio::sync::Mutex::new(thumbnail_input_tx),
         })
         .plugin(
             tauri_plugin_log::Builder::default()
@@ -310,12 +332,25 @@ fn main() {
             let state = handle.state::<AppState>();
             let db = load_database(&handle).expect("Load database failed");
             let videos = get_videos(&db).expect("Load videos failed");
-            let thumbnails = state::get_thumbnails(&handle);
+            let thumbnail_location = thumbnail::get_thumbnail_save_location(&handle);
+            let thumbnail_cache = thumbnail::create_thumbnail_cache(&thumbnail_location);
             let video_cache = state::get_video_cache(&db);
             *state.videos.lock().unwrap() = Some(videos);
             *state.db.lock().unwrap() = Some(db);
-            *state.thumbnail_cache.lock().unwrap() = Some(thumbnails);
+            *state.thumbnail_cache.lock().unwrap() = Some(thumbnail_cache);
             *state.video_cache.lock().unwrap() = Some(video_cache);
+            /* ASync tasks */
+            tauri::async_runtime::spawn(async move {
+                thumbnail::process_thumbnail_input_channels(
+                    &thumbnail_location,
+                    thumbnail_input_rx,
+                    thumbnail_output_tx,
+                )
+                .await;
+            });
+            tauri::async_runtime::spawn(async move {
+                thumbnail::process_thumbnail_output_channels(&handle, thumbnail_output_rx).await;
+            });
             Ok(())
         })
         .run(tauri::generate_context!())

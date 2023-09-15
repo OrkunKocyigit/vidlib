@@ -1,8 +1,0 @@
-{
-  "tauri": {
-    "bundle": {
-      "resources": ["PathEd.exe"],
-      "identifier": "com.orkun.vidlib"
-    }
-  }
-}

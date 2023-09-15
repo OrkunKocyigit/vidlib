@@ -1,64 +1,13 @@
 use std::collections::HashMap;
-use std::fs;
-use std::fs::read_dir;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
-use tauri::AppHandle;
+use serde::Serialize;
 
-use crate::util::get_app_dir;
+use crate::{database, EmitProgress, thumbnail};
+use crate::thumbnail::ThumbnailChannelMessage;
 use crate::video::VideoEntry;
-use crate::{database, EmitProgress};
-
-pub struct ThumbnailCache {
-    base_dir: PathBuf,
-    thumbnails: HashMap<String, ThumbnailEntry>,
-}
-
-impl ThumbnailCache {
-    pub fn new<P: AsRef<Path>>(base_dir: P) -> Self {
-        Self {
-            base_dir: base_dir.as_ref().to_path_buf(),
-            thumbnails: HashMap::new(),
-        }
-    }
-
-    pub fn base_dir(&self) -> &PathBuf {
-        &self.base_dir
-    }
-
-    pub fn add_thumbnail_entry(&mut self, id: &String, path: &PathBuf) {
-        self.thumbnails
-            .entry(id.clone())
-            .or_insert_with(|| ThumbnailEntry::new())
-            .add_video(path)
-    }
-
-    pub fn get_paths(&self, id: &String) -> Option<&Vec<PathBuf>> {
-        self.thumbnails.get(id).map(|t| t.paths())
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct ThumbnailEntry {
-    paths: Vec<PathBuf>,
-}
-
-impl ThumbnailEntry {
-    pub fn new() -> Self {
-        Self { paths: Vec::new() }
-    }
-
-    pub fn add_video(&mut self, path: &PathBuf) {
-        let _ = &self.paths.push(path.clone());
-    }
-
-    pub fn paths(&self) -> &Vec<PathBuf> {
-        &self.paths
-    }
-}
 
 pub struct VideoCache {
     items: HashMap<String, VideoCacheItem>,
@@ -112,7 +61,6 @@ impl VideoCacheItem {
     pub fn new(filesize: u64, id: String) -> Self {
         Self { filesize, id }
     }
-
     pub fn filesize(&self) -> u64 {
         self.filesize
     }
@@ -124,30 +72,9 @@ impl VideoCacheItem {
 pub struct AppState {
     pub db: Mutex<Option<Connection>>,
     pub videos: Mutex<Option<HashMap<String, VideoEntry>>>,
-    pub thumbnail_cache: Mutex<Option<ThumbnailCache>>,
+    pub thumbnail_cache: Mutex<Option<thumbnail::ThumbnailCache>>,
     pub video_cache: Mutex<Option<VideoCache>>,
-}
-
-pub fn get_thumbnails(app_handle: &AppHandle) -> ThumbnailCache {
-    let path = get_app_dir(app_handle);
-    fs::create_dir_all(&path).expect("App data directory creation failed");
-    let thumbnail_path = path.join("thumbnail");
-    fs::create_dir_all(&thumbnail_path).expect("Thumbnail folder creation failed");
-    let mut thumbnail_cache = ThumbnailCache::new(&thumbnail_path);
-    for entry in read_dir(&thumbnail_path).unwrap() {
-        let dir_entry = entry.unwrap();
-        if dir_entry.path().is_file() {
-            let name = dir_entry.file_name();
-            let file_name = name.to_str().unwrap();
-            if file_name.contains("_") {
-                let mut split = file_name.split("_");
-                let id = split.next().unwrap();
-                let path = dir_entry.path();
-                thumbnail_cache.add_thumbnail_entry(&id.to_string(), &path);
-            }
-        }
-    }
-    thumbnail_cache
+    pub thumbnail_channel: tokio::sync::Mutex<tokio::sync::mpsc::Sender<ThumbnailChannelMessage>>,
 }
 
 pub fn get_video_cache(connection: &Connection) -> VideoCache {

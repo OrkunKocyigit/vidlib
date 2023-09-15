@@ -4,11 +4,11 @@ use std::path::{Path, PathBuf};
 use native_dialog::FileDialog;
 use rusqlite::Connection;
 
+use crate::{database, EmitProgress};
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
-use crate::state::{ThumbnailCache, VideoCache};
+use crate::state::VideoCache;
 use crate::video::{VideoEntry, VideoMetadata};
-use crate::{database, EmitProgress};
 
 pub fn file_scan(
     path: String,
@@ -92,39 +92,6 @@ pub fn get_video(
         response: Some(video.clone()),
         error: None,
     })
-}
-
-pub fn get_thumbnail(
-    video: VideoFile,
-    thumbnail_cache: &mut ThumbnailCache,
-) -> Result<Response<Vec<PathBuf>>, ()> {
-    match get_thumbnails(video, thumbnail_cache) {
-        Ok(r) => Ok(Response {
-            result: ResponseType::SUCCESS,
-            response: Some(r),
-            error: None,
-        }),
-        Err(r) => Ok(Response {
-            result: ResponseType::SUCCESS,
-            response: None,
-            error: Some(r.to_string()),
-        }),
-    }
-}
-
-fn get_thumbnails(
-    video: VideoFile,
-    thumbnail_cache: &mut ThumbnailCache,
-) -> Result<Vec<PathBuf>, anyhow::Error> {
-    if let Some(e) = thumbnail_cache.get_paths(&video.id) {
-        Ok(e.clone())
-    } else {
-        let thumbnail_paths = video.create_thumbnails(thumbnail_cache.base_dir())?;
-        thumbnail_paths
-            .iter()
-            .for_each(|path| thumbnail_cache.add_thumbnail_entry(&video.id, path));
-        Ok(thumbnail_paths)
-    }
 }
 
 pub fn update_rating(
