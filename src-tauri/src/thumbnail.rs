@@ -1,4 +1,5 @@
-use std::{collections, fs, path};
+use std::fmt::Formatter;
+use std::{collections, fmt, fs, path};
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
@@ -124,12 +125,39 @@ impl ThumbnailChannelMessage {
     }
 }
 
-pub async fn process_thumbnail_input_channels(
-    path: &path::PathBuf,
-    thumbnail_input_rx: sync::mpsc::Receiver<ThumbnailChannelMessage>,
-    thumbnail_output_tx: sync::mpsc::Sender<ThumbnailChannelMessage>,
+impl fmt::Display for ThumbnailChannelMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "id: {}, path: {}", self.id, self.path.display())
+    }
+}
+
+async fn create_and_send_thumbnail(
+    save_location: &path::PathBuf,
+    input: ThumbnailChannelMessage,
+    thumbnail_output_tx: &sync::mpsc::Sender<ThumbnailChannelMessage>,
 ) {
-    todo!()
+    let thumbnail = create_thumbnail(save_location, &input.id, &input.path);
+    if let Ok(path) = thumbnail {
+        if let Err(e) = thumbnail_output_tx
+            .send(ThumbnailChannelMessage::new(path, input.id))
+            .await
+        {
+            error!("Failed to send thumbnail output: {}", e);
+        }
+    }
+}
+
+pub async fn process_thumbnail_input_channels(
+    save_location: &path::PathBuf,
+    mut thumbnail_input_rx: sync::mpsc::Receiver<ThumbnailChannelMessage>,
+    thumbnail_output_tx: sync::mpsc::Sender<ThumbnailChannelMessage>,
+) -> Result<(), anyhow::Error> {
+    while let Some(input) = thumbnail_input_rx.recv().await {
+        debug!("Message received in thumbnail input {}", input);
+        create_and_send_thumbnail(save_location, input, &thumbnail_output_tx).await;
+    }
+
+    Ok(())
 }
 
 pub async fn process_thumbnail_output_channels(
@@ -137,6 +165,7 @@ pub async fn process_thumbnail_output_channels(
     mut thumbnail_output_rx: sync::mpsc::Receiver<ThumbnailChannelMessage>,
 ) -> Result<(), anyhow::Error> {
     while let Some(output) = thumbnail_output_rx.recv().await {
+        debug!("Message received in thumbnail output {}", output);
         let _ = app.emit_all(
             &*format!("update_thumbnail_{}", output.id),
             ThumbnailEmitEvent::new(output.path),
@@ -156,4 +185,13 @@ impl ThumbnailEmitEvent {
     pub fn new(path: path::PathBuf) -> Self {
         Self { path }
     }
+}
+
+// Creator
+fn create_thumbnail(
+    save_location: &path::PathBuf,
+    id: &String,
+    video_location: &path::PathBuf,
+) -> Result<path::PathBuf, anyhow::Error> {
+    Ok(path::PathBuf::from("./images/image_not_found.webp"))
 }

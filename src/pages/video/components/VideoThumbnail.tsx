@@ -1,7 +1,9 @@
 import { Box, Image, Text } from '@mantine/core';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { useEffect, useState } from 'react';
-import { GetThumbnail } from '../../../service/GetThumbnail';
+import { GetThumbnail, type GetThumbnailEvent } from '../../../service/GetThumbnail';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { convertFileSrc } from '@tauri-apps/api/tauri';
 
 export interface VideoThumbnailProps {
   video?: VideoFile;
@@ -19,15 +21,33 @@ function VideoThumbnail(props: VideoThumbnailProps): JSX.Element {
 
   useEffect(() => {
     setImageSrc(undefined);
+    let unlisten = new Promise<UnlistenFn>((resolve) => {
+      resolve(() => {});
+    });
     if (props.video != null) {
-      GetThumbnail(props.video)
+      GetThumbnail(props.video.id, props.video.path)
         .then((value) => {
-          setImageSrc(value.response as string[]);
+          if (value.response !== undefined) {
+            setImageSrc(value.response);
+          }
         })
         .catch((reason) => {
           console.error(reason);
         });
+      const eventName = `update_thumbnail_${props.video.id}`;
+      unlisten = listen<GetThumbnailEvent>(eventName, (event) => {
+        setImageSrc([convertFileSrc(event.payload.path)]);
+      });
     }
+    return () => {
+      unlisten
+        .then((value) => {
+          value();
+        })
+        .catch((reason) => {
+          console.error(reason);
+        });
+    };
   }, [props.video]);
 
   return (
@@ -35,8 +55,7 @@ function VideoThumbnail(props: VideoThumbnailProps): JSX.Element {
       mr={'md'}
       sx={(theme) => ({
         backgroundColor: theme.colorScheme === 'dark' ? 'white' : 'black'
-      })}
-    >
+      })}>
       <Image
         width={'10rem'}
         height={'10rem'}
@@ -45,8 +64,7 @@ function VideoThumbnail(props: VideoThumbnailProps): JSX.Element {
         radius={'md'}
         placeholder={<Text align={'center'}>Thumbnail</Text>}
         withPlaceholder
-        src={imageUrl(imageSrc)}
-      ></Image>
+        src={imageUrl(imageSrc)}></Image>
     </Box>
   );
 }
