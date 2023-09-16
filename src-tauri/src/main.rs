@@ -11,6 +11,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use gstreamer::init;
 use serde::Serialize;
@@ -137,7 +138,7 @@ async fn get_thumbnail(
     path: &str,
 ) -> Result<Response<Option<Vec<PathBuf>>>, ()> {
     debug!("Get Thumbnails Start");
-    let thumbnail = thumbnail::find_thumbnail_path_in_cache(&state, &id);
+    let thumbnail = thumbnail::find_thumbnail_path_in_cache(&state, &id).await;
     if let Some(t) = thumbnail {
         debug!(
             "Thumbnail found at location {}. Returning",
@@ -342,6 +343,7 @@ fn main() {
         ])
         .setup(|app| {
             let handle = app.handle();
+            let handle = Arc::new(handle);
             let state = handle.state::<AppState>();
             let db = load_database(&handle).expect("Load database failed");
             let videos = get_videos(&db).expect("Load videos failed");
@@ -350,28 +352,46 @@ fn main() {
             let video_cache = state::get_video_cache(&db);
             *state.videos.lock().unwrap() = Some(videos);
             *state.db.lock().unwrap() = Some(db);
-            *state.thumbnail_cache.lock().unwrap() = Some(thumbnail_cache);
             *state.video_cache.lock().unwrap() = Some(video_cache);
-            /* ASync tasks */
-            tauri::async_runtime::spawn(async move {
-                thumbnail::process_thumbnail_input_channels(
-                    &thumbnail_location,
-                    thumbnail_input_rx,
-                    thumbnail_output_tx,
-                )
-                .await;
-            });
-            tauri::async_runtime::spawn(async move {
-                match thumbnail::process_thumbnail_output_channels(&handle, thumbnail_output_rx)
+            // Thumbnail mutex async task
+            {
+                let handle = Arc::clone(&handle);
+                tauri::async_runtime::spawn(async move {
+                    let state = handle.state::<AppState>();
+                    let mut lock = state.thumbnail_cache.lock().await;
+                    *lock = Some(thumbnail_cache);
+                });
+            }
+            // Thumbnail input async task
+            {
+                let handle = Arc::clone(&handle);
+                tauri::async_runtime::spawn(async move {
+                    let state = handle.state::<AppState>();
+                    thumbnail::process_thumbnail_input_channels(
+                        &state.thumbnail_cache,
+                        &thumbnail_location,
+                        thumbnail_input_rx,
+                        thumbnail_output_tx,
+                    )
                     .await
-                {
-                    Ok(_) => Ok(()),
-                    Err(e) => {
-                        error!("Thumbnail output channels failed {}", e.to_string());
-                        Err(e)
+                    .expect("Thumbnail input channels failed");
+                });
+            }
+            // Thumbnail output async task
+            {
+                let handle = Arc::clone(&handle);
+                tauri::async_runtime::spawn(async move {
+                    match thumbnail::process_thumbnail_output_channels(&handle, thumbnail_output_rx)
+                        .await
+                    {
+                        Ok(_) => Ok(()),
+                        Err(e) => {
+                            error!("Thumbnail output channels failed {}", e.to_string());
+                            Err(e)
+                        }
                     }
-                }
-            });
+                });
+            }
             Ok(())
         })
         .run(tauri::generate_context!())

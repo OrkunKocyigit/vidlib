@@ -80,29 +80,25 @@ pub fn get_thumbnail_save_location(app: &AppHandle) -> path::PathBuf {
     thumbnail_path
 }
 
-pub fn find_thumbnail_path_in_cache(
-    state: &tauri::State<state::AppState>,
+pub async fn find_thumbnail_path_in_cache(
+    state: &tauri::State<'_, state::AppState>,
     id: &String,
 ) -> Option<Vec<path::PathBuf>> {
     debug!("Check if we have it in cache");
-    if let Ok(mut guard) = state.thumbnail_cache.lock() {
-        if let Some(cache) = guard.as_mut() {
-            if let Some(path) = cache.get_paths(id) {
-                debug!("Found thumbnail path in cache {}", id);
-                if validate_thumbnail(path) {
-                    return Some(path.clone());
-                } else {
-                    debug!("Thumbnail path is no longer valid");
-                    cache.remove_path(id);
-                }
+    if let Some(cache) = state.thumbnail_cache.lock().await.as_mut() {
+        if let Some(path) = cache.get_paths(id) {
+            debug!("Found thumbnail path in cache {}", id);
+            if validate_thumbnail(path) {
+                return Some(path.clone());
             } else {
-                debug!("Thumbnail is not in the cache {}", id)
+                debug!("Thumbnail path is no longer valid");
+                cache.remove_path(id);
             }
         } else {
-            debug!("Cache doesn't exist");
+            debug!("Thumbnail is not in the cache {}", id)
         }
     } else {
-        debug!("Couldn't get guard");
+        debug!("Cache doesn't exist");
     }
     None
 }
@@ -137,17 +133,16 @@ async fn create_and_send_thumbnail(
     thumbnail_output_tx: &sync::mpsc::Sender<ThumbnailChannelMessage>,
 ) {
     let thumbnail = create_thumbnail(save_location, &input.id, &input.path);
-    if let Ok(path) = thumbnail {
-        if let Err(e) = thumbnail_output_tx
-            .send(ThumbnailChannelMessage::new(path, input.id))
-            .await
-        {
-            error!("Failed to send thumbnail output: {}", e);
-        }
+    if let Err(e) = thumbnail_output_tx
+        .send(ThumbnailChannelMessage::new(thumbnail, input.id))
+        .await
+    {
+        error!("Failed to send thumbnail output: {}", e);
     }
 }
 
 pub async fn process_thumbnail_input_channels(
+    thumbnail_cache: &sync::Mutex<Option<ThumbnailCache>>,
     save_location: &path::PathBuf,
     mut thumbnail_input_rx: sync::mpsc::Receiver<ThumbnailChannelMessage>,
     thumbnail_output_tx: sync::mpsc::Sender<ThumbnailChannelMessage>,
@@ -192,6 +187,23 @@ fn create_thumbnail(
     save_location: &path::PathBuf,
     id: &String,
     video_location: &path::PathBuf,
+) -> path::PathBuf {
+    let file_name = &format!("{}_01.png", id);
+    let full_location = &save_location.join(file_name);
+    let path = generate_thumbnail(file_name, full_location, video_location);
+    match path {
+        Ok(p) => p,
+        Err(e) => {
+            error!("Failed to generate thumbnail: {}", e);
+            path::PathBuf::from("./images/image_not_found.webp")
+        }
+    }
+}
+
+fn generate_thumbnail(
+    save_location: &String,
+    file_name: &path::PathBuf,
+    video_location: &path::PathBuf,
 ) -> Result<path::PathBuf, anyhow::Error> {
-    Ok(path::PathBuf::from("./images/image_not_found.webp"))
+    Err(anyhow::Error::msg("Test"))
 }

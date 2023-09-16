@@ -5,9 +5,9 @@ use std::sync::Mutex;
 use rusqlite::Connection;
 use serde::Serialize;
 
-use crate::{database, EmitProgress, thumbnail};
 use crate::thumbnail::ThumbnailChannelMessage;
 use crate::video::VideoEntry;
+use crate::{database, thumbnail, EmitProgress};
 
 pub struct VideoCache {
     items: HashMap<String, VideoCacheItem>,
@@ -72,7 +72,7 @@ impl VideoCacheItem {
 pub struct AppState {
     pub db: Mutex<Option<Connection>>,
     pub videos: Mutex<Option<HashMap<String, VideoEntry>>>,
-    pub thumbnail_cache: Mutex<Option<thumbnail::ThumbnailCache>>,
+    pub thumbnail_cache: tokio::sync::Mutex<Option<thumbnail::ThumbnailCache>>,
     pub video_cache: Mutex<Option<VideoCache>>,
     pub thumbnail_channel: tokio::sync::Mutex<tokio::sync::mpsc::Sender<ThumbnailChannelMessage>>,
 }
