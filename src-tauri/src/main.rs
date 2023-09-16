@@ -21,6 +21,7 @@ use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
 use crate::state::{AppState, EmitTotalProgress};
+use crate::thumbnail::ThumbnailChannelMessage;
 use crate::video::VideoMetadata;
 
 mod database;
@@ -148,8 +149,21 @@ async fn get_thumbnail(
         Ok(gui::wrap_success(Some(t)))
     } else {
         debug!("Thumbnail not found, it will be created");
-        state.thumbnail_channel.lock().await;
-        todo!()
+        let pathbuf = PathBuf::from(path);
+        if pathbuf.is_file() {
+            debug!("Sending message to Thumbnail Channel");
+            let message = ThumbnailChannelMessage::new(pathbuf, id);
+            match state.thumbnail_channel.lock().await.send(message).await {
+                Ok(_) => Ok(gui::wrap_success(None)),
+                Err(e) => {
+                    debug!("Sending message to thumbnail channel failed {}", e);
+                    Ok(gui::wrap_failure(e.to_string()))
+                }
+            }
+        } else {
+            error!("Given path is not a file.");
+            Ok(gui::wrap_failure("Given path is not a file.".into()))
+        }
     }
 }
 
