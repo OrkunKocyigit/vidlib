@@ -1,7 +1,10 @@
-use crate::{state, util};
 use std::{collections, fs, path};
-use tauri::AppHandle;
+
+use serde::Serialize;
+use tauri::{AppHandle, Manager};
 use tokio::sync;
+
+use crate::{state, util};
 
 // Thumbnail Cache
 pub struct ThumbnailCache {
@@ -119,13 +122,6 @@ impl ThumbnailChannelMessage {
     pub fn new(path: path::PathBuf, id: String) -> Self {
         Self { path, id }
     }
-
-    pub fn path(&self) -> &path::PathBuf {
-        &self.path
-    }
-    pub fn id(&self) -> &str {
-        &self.id
-    }
 }
 
 pub async fn process_thumbnail_input_channels(
@@ -138,7 +134,26 @@ pub async fn process_thumbnail_input_channels(
 
 pub async fn process_thumbnail_output_channels(
     app: &AppHandle,
-    thumbnail_output_rx: sync::mpsc::Receiver<ThumbnailChannelMessage>,
-) {
-    todo!()
+    mut thumbnail_output_rx: sync::mpsc::Receiver<ThumbnailChannelMessage>,
+) -> Result<(), anyhow::Error> {
+    while let Some(output) = thumbnail_output_rx.recv().await {
+        let _ = app.emit_all(
+            &*format!("update_thumbnail_{}", output.id),
+            ThumbnailEmitEvent::new(output.path),
+        );
+    }
+
+    Ok(())
+}
+
+// Events
+#[derive(Clone, Serialize)]
+pub struct ThumbnailEmitEvent {
+    path: path::PathBuf,
+}
+
+impl ThumbnailEmitEvent {
+    pub fn new(path: path::PathBuf) -> Self {
+        Self { path }
+    }
 }

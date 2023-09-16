@@ -12,7 +12,6 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::path::PathBuf;
 
-use anyhow::Context;
 use gstreamer::init;
 use serde::Serialize;
 use tauri::{AppHandle, Error, Manager, State};
@@ -363,7 +362,15 @@ fn main() {
                 .await;
             });
             tauri::async_runtime::spawn(async move {
-                thumbnail::process_thumbnail_output_channels(&handle, thumbnail_output_rx).await;
+                match thumbnail::process_thumbnail_output_channels(&handle, thumbnail_output_rx)
+                    .await
+                {
+                    Ok(_) => Ok(()),
+                    Err(e) => {
+                        error!("Thumbnail output channels failed {}", e.to_string());
+                        Err(e)
+                    }
+                }
             });
             Ok(())
         })
