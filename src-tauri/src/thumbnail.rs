@@ -139,12 +139,12 @@ impl fmt::Display for ThumbnailChannelMessage {
     }
 }
 
-async fn create_and_send_thumbnail(
-    save_location: &PathBuf,
+async fn create_and_send_thumbnail<P: AsRef<Path>>(
+    save_location: P,
     input: ThumbnailChannelMessage,
     thumbnail_output_tx: &sync::mpsc::Sender<ThumbnailChannelMessage>,
 ) -> Result<PathBuf, Error> {
-    let thumbnail = create_thumbnail(save_location, &input.id, &input.path);
+    let thumbnail = create_thumbnail(save_location, &input.id, input.path);
     let success = thumbnail.is_ok();
     let thumbnail_path = thumbnail.unwrap_or(PathBuf::from("./images/image_not_found.webp"));
     if let Err(e) = thumbnail_output_tx
@@ -218,19 +218,19 @@ impl ThumbnailEmitEvent {
 }
 
 // Creator
-fn create_thumbnail<P: AsRef<Path>>(
+fn create_thumbnail<P: AsRef<Path>, R: AsRef<Path>>(
     save_location: P,
     id: &String,
-    video_location: P,
+    video_location: R,
 ) -> Result<PathBuf, Error> {
     let file_name = format!("{}_01.png", id);
     let full_location = save_location.as_ref().join(file_name);
-    generate_thumbnail(full_location, video_location.as_ref().to_path_buf())
+    generate_thumbnail(full_location, video_location)
 }
 
-fn generate_thumbnail<P: AsRef<Path>>(
+fn generate_thumbnail<P: AsRef<Path>, R: AsRef<Path>>(
     save_location: P,
-    video_location: P,
+    video_location: R,
 ) -> Result<PathBuf, Error> {
     debug!(
         "Generate thumbnail started {}",
