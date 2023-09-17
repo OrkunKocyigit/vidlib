@@ -251,6 +251,7 @@ fn open_video(video: VideoFile) -> Result<Response<()>, ()> {
 #[tauri::command]
 async fn get_media_info(
     state: State<'_, AppState>,
+    id: String,
     path: &str,
 ) -> Result<Response<Option<String>>, ()> {
     debug!("Get Metadata Start");
@@ -263,7 +264,7 @@ async fn get_media_info(
             .mediainfo_channel
             .lock()
             .await
-            .send(VideoMediaInfoChannelMessage::new(path, None))
+            .send(VideoMediaInfoChannelMessage::new(id, path, None))
             .await
         {
             Ok(_) => Ok(wrap_success(None)),

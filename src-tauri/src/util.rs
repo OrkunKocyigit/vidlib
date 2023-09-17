@@ -46,7 +46,7 @@ pub(crate) fn get_log_level() -> LevelFilter {
     }
 }
 
-fn format_file_size(size: u64) -> String {
+pub fn format_file_size(size: u64) -> String {
     let units = ["KB", "MB", "GB", "TB", "PB", "EB"];
     if size < 1024 {
         return format!("{} B", size);

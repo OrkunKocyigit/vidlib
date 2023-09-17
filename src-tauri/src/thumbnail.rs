@@ -363,7 +363,9 @@ fn seek_to_middle(
     };
 }
 
-fn create_input_context<P: AsRef<Path>>(video_location: P) -> Result<AVFormatContextInput, Error> {
+pub fn create_input_context<P: AsRef<Path>>(
+    video_location: P,
+) -> Result<AVFormatContextInput, Error> {
     let input_context = AVFormatContextInput::open(
         &CString::new(video_location.as_ref().to_string_lossy().as_bytes())
             .context("Video location can't be converted")?,
