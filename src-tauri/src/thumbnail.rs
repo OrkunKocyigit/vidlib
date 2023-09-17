@@ -2,7 +2,7 @@ use std::ffi::CString;
 use std::fmt::Formatter;
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{collections, fmt, fs, slice};
 
 use anyhow::{bail, Context, Error};
@@ -32,10 +32,10 @@ impl ThumbnailCache {
         }
     }
 
-    pub fn add_thumbnail_entry(&mut self, id: &String, path: &PathBuf) {
+    pub fn add_thumbnail_entry(&mut self, id: &str, path: &PathBuf) {
         self.thumbnails
-            .entry(id.clone())
-            .or_insert_with(|| ThumbnailEntry::new())
+            .entry(id.to_string())
+            .or_insert_with(ThumbnailEntry::new)
             .add_thumbnail(path)
     }
 
@@ -59,8 +59,8 @@ impl ThumbnailEntry {
         Self { paths: Vec::new() }
     }
 
-    pub fn add_thumbnail(&mut self, path: &PathBuf) {
-        let _ = &self.paths.push(path.clone());
+    pub fn add_thumbnail<P: AsRef<Path>>(&mut self, path: P) {
+        let _ = &self.paths.push(path.as_ref().to_path_buf());
     }
 
     pub fn paths(&self) -> &Vec<PathBuf> {
@@ -68,18 +68,18 @@ impl ThumbnailEntry {
     }
 }
 
-pub fn create_thumbnail_cache(thumbnail_path: &PathBuf) -> ThumbnailCache {
+pub fn create_thumbnail_cache<P: AsRef<Path>>(thumbnail_path: P) -> ThumbnailCache {
     let mut thumbnail_cache = ThumbnailCache::new();
-    for entry in fs::read_dir(&thumbnail_path).unwrap() {
+    for entry in fs::read_dir(thumbnail_path).unwrap() {
         let dir_entry = entry.unwrap();
         if dir_entry.path().is_file() {
             let name = dir_entry.file_name();
             let file_name = name.to_str().unwrap();
-            if file_name.contains("_") {
-                let mut split = file_name.split("_");
+            if file_name.contains('_') {
+                let mut split = file_name.split('_');
                 let id = split.next().unwrap();
                 let path = dir_entry.path();
-                thumbnail_cache.add_thumbnail_entry(&id.to_string(), &path);
+                thumbnail_cache.add_thumbnail_entry(id, &path);
             }
         }
     }
@@ -117,10 +117,8 @@ pub async fn find_thumbnail_path_in_cache(
     None
 }
 
-fn validate_thumbnail(v: &Vec<PathBuf>) -> bool {
-    v.iter()
-        .map(|v| v.exists() && v.is_file())
-        .fold(true, |acc, v| acc && v)
+fn validate_thumbnail(v: &[PathBuf]) -> bool {
+    v.iter().map(|v| v.exists() && v.is_file()).all(|v| v)
 }
 // Channel
 #[derive(Clone)]
@@ -199,7 +197,7 @@ pub async fn process_thumbnail_output_channels(
     while let Some(output) = thumbnail_output_rx.recv().await {
         debug!("Message received in thumbnail output {}", output);
         let _ = app.emit_all(
-            &*format!("update_thumbnail_{}", output.id),
+            &format!("update_thumbnail_{}", output.id),
             ThumbnailEmitEvent::new(output.path),
         );
     }
@@ -220,19 +218,25 @@ impl ThumbnailEmitEvent {
 }
 
 // Creator
-fn create_thumbnail(
-    save_location: &PathBuf,
+fn create_thumbnail<P: AsRef<Path>>(
+    save_location: P,
     id: &String,
-    video_location: &PathBuf,
+    video_location: P,
 ) -> Result<PathBuf, Error> {
     let file_name = format!("{}_01.png", id);
-    let full_location = save_location.join(file_name);
-    generate_thumbnail(&full_location, &video_location)
+    let full_location = save_location.as_ref().join(file_name);
+    generate_thumbnail(full_location, video_location.as_ref().to_path_buf())
 }
 
-fn generate_thumbnail(save_location: &PathBuf, video_location: &PathBuf) -> Result<PathBuf, Error> {
-    debug!("Generate thumbnail started {}", video_location.display());
-    let mut input_context = create_input_context(&video_location)?;
+fn generate_thumbnail<P: AsRef<Path>>(
+    save_location: P,
+    video_location: P,
+) -> Result<PathBuf, Error> {
+    debug!(
+        "Generate thumbnail started {}",
+        video_location.as_ref().display()
+    );
+    let mut input_context = create_input_context(video_location)?;
     debug!("Input context created");
     let (video_index, mut decoder_context, seek_location) =
         create_decoder_context(&mut input_context)?;
@@ -253,7 +257,7 @@ fn generate_thumbnail(save_location: &PathBuf, video_location: &PathBuf) -> Resu
             scaled_thumbnail_packet.size as usize,
         )
     };
-    return save_image(save_location, data);
+    save_image(save_location, data)
 }
 
 fn get_scaled_thumbnail_packet(
@@ -281,7 +285,7 @@ fn get_scaled_thumbnail_packet(
         .context("Can't create image buffer")?;
         let mut scaled_thumbnail_frame = AVFrameWithImage::new(image_buffer);
         sws_context.scale_frame(
-            &thumbnail_frame,
+            thumbnail_frame,
             0,
             decoder_context.height,
             &mut scaled_thumbnail_frame,
@@ -359,9 +363,9 @@ fn seek_to_middle(
     };
 }
 
-fn create_input_context(video_location: &PathBuf) -> Result<AVFormatContextInput, Error> {
+fn create_input_context<P: AsRef<Path>>(video_location: P) -> Result<AVFormatContextInput, Error> {
     let input_context = AVFormatContextInput::open(
-        &CString::new(video_location.to_string_lossy().as_bytes())
+        &CString::new(video_location.as_ref().to_string_lossy().as_bytes())
             .context("Video location can't be converted")?,
     )
     .context("Video file input context failed")?;
@@ -393,10 +397,11 @@ fn create_decoder_context(
     Ok((video_index, decoder_context, seek_location))
 }
 
-fn save_image(save_location: &PathBuf, data: &[u8]) -> Result<PathBuf, Error> {
+fn save_image<P: AsRef<Path>>(save_location: P, data: &[u8]) -> Result<PathBuf, Error> {
     debug!("Start saving image");
+    let save_location = save_location.as_ref();
     let mut file = File::create(save_location)?;
     file.write_all(data)?;
     info!("Thumbnail created successfully {}", save_location.display());
-    Ok(save_location.clone())
+    Ok(save_location.to_path_buf())
 }
