@@ -1,7 +1,7 @@
-use log::LevelFilter;
 use std::env;
 use std::path::PathBuf;
 
+use log::LevelFilter;
 use tauri::AppHandle;
 use tauri_plugin_log::LogTarget;
 
@@ -44,4 +44,19 @@ pub(crate) fn get_log_level() -> LevelFilter {
     } else {
         LevelFilter::Error
     }
+}
+
+fn format_file_size(size: u64) -> String {
+    let units = ["KB", "MB", "GB", "TB", "PB", "EB"];
+    if size < 1024 {
+        return format!("{} B", size);
+    }
+    let mut size = size as f64 / 1024.0;
+    for unit in units.iter() {
+        if size < 1024.0 {
+            return format!("{:.1} {}", size, unit);
+        }
+        size /= 1024.0;
+    }
+    format!("{:.1} {}", size, units.last().unwrap())
 }

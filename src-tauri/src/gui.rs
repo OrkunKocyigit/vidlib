@@ -4,11 +4,11 @@ use std::path::{Path, PathBuf};
 use native_dialog::FileDialog;
 use rusqlite::Connection;
 
-use crate::{database, EmitProgress};
 use crate::filescan::{FileScan, FolderInfo, VideoFile};
 use crate::service::{Response, ResponseType};
 use crate::state::VideoCache;
-use crate::video::{VideoEntry, VideoMetadata};
+use crate::video::VideoEntry;
+use crate::{database, EmitProgress};
 
 pub fn file_scan(
     path: String,
@@ -143,22 +143,6 @@ pub(crate) fn update_name(
         response: Some(n.to_owned()),
         error: None,
     })
-}
-
-pub(crate) async fn get_metadata(v: &VideoFile) -> Result<Response<VideoMetadata>, ()> {
-    let metadata = v.get_metadata().await;
-    return match metadata {
-        Ok(m) => Ok(Response {
-            result: ResponseType::SUCCESS,
-            response: Some(m),
-            error: None,
-        }),
-        Err(e) => Ok(Response {
-            result: ResponseType::FAILURE,
-            response: None,
-            error: Some(e.to_string()),
-        }),
-    };
 }
 
 pub(crate) fn update_notes(

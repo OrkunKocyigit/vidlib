@@ -6,13 +6,12 @@ use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::os::windows::prelude::MetadataExt;
 use std::path::{Path, PathBuf};
 
-use anyhow::Error;
 use serde::{Deserialize, Serialize};
 use xxhash_rust::xxh3::Xxh3;
 
 use crate::state::{VideoCache, VideoCacheItem};
-use crate::video::{is_video, VideoEntry, VideoMetadata};
-use crate::{video, EmitProgress};
+use crate::video::{is_video, VideoEntry};
+use crate::EmitProgress;
 
 const CHUNK_SIZE: u64 = 1 * 1024 * 1024;
 
@@ -97,10 +96,6 @@ impl VideoFile {
         if let Some(e) = p0 {
             let _ = &self.set_watched(e.watched());
         }
-    }
-
-    pub(crate) async fn get_metadata(&self) -> Result<VideoMetadata, Error> {
-        video::create_metadata(&self.path).await
     }
 }
 

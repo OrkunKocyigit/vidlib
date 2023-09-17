@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use rusqlite::Connection;
 use serde::Serialize;
 
+use crate::mediainfo::VideoMediaInfoChannelMessage;
 use crate::thumbnail::ThumbnailChannelMessage;
 use crate::video::VideoEntry;
 use crate::{database, thumbnail, EmitProgress};
@@ -75,6 +76,8 @@ pub struct AppState {
     pub thumbnail_cache: tokio::sync::Mutex<Option<thumbnail::ThumbnailCache>>,
     pub video_cache: Mutex<Option<VideoCache>>,
     pub thumbnail_channel: tokio::sync::Mutex<tokio::sync::mpsc::Sender<ThumbnailChannelMessage>>,
+    pub mediainfo_channel:
+        tokio::sync::Mutex<tokio::sync::mpsc::Sender<VideoMediaInfoChannelMessage>>,
 }
 
 pub fn get_video_cache(connection: &Connection) -> VideoCache {

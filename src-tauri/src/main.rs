@@ -13,21 +13,22 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use gstreamer::init;
 use serde::Serialize;
 use tauri::{AppHandle, Error, Manager, State};
 
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
+use crate::gui::{wrap_failure, wrap_success};
+use crate::mediainfo::VideoMediaInfoChannelMessage;
 use crate::service::{Response, ResponseType};
 use crate::state::{AppState, EmitTotalProgress};
 use crate::thumbnail::ThumbnailChannelMessage;
-use crate::video::VideoMetadata;
 
 mod database;
 mod ffmpeg_decoder;
 mod filescan;
 mod gui;
+mod mediainfo;
 mod service;
 mod state;
 mod thumbnail;
@@ -146,7 +147,7 @@ async fn get_thumbnail(
                 .map(|p| p.display().to_string())
                 .unwrap_or("".into())
         );
-        Ok(gui::wrap_success(Some(t)))
+        Ok(wrap_success(Some(t)))
     } else {
         debug!("Thumbnail not found, it will be created");
         let pathbuf = PathBuf::from(path);
@@ -154,15 +155,15 @@ async fn get_thumbnail(
             debug!("Sending message to Thumbnail Channel");
             let message = ThumbnailChannelMessage::new(pathbuf, id);
             match state.thumbnail_channel.lock().await.send(message).await {
-                Ok(_) => Ok(gui::wrap_success(None)),
+                Ok(_) => Ok(wrap_success(None)),
                 Err(e) => {
                     debug!("Sending message to thumbnail channel failed {}", e);
-                    Ok(gui::wrap_failure(e.to_string()))
+                    Ok(wrap_failure(e.to_string()))
                 }
             }
         } else {
             error!("Given path is not a file.");
-            Ok(gui::wrap_failure("Given path is not a file.".into()))
+            Ok(wrap_failure("Given path is not a file.".into()))
         }
     }
 }
@@ -248,9 +249,30 @@ fn open_video(video: VideoFile) -> Result<Response<()>, ()> {
 }
 
 #[tauri::command]
-async fn get_metadata(video: VideoFile) -> Result<Response<VideoMetadata>, ()> {
+async fn get_media_info(
+    state: State<'_, AppState>,
+    path: &str,
+) -> Result<Response<Option<String>>, ()> {
     debug!("Get Metadata Start");
-    gui::get_metadata(&video).await
+    let path = PathBuf::from(path);
+    if !path.is_file() {
+        error!("File does not exist");
+        Ok(wrap_failure("File does not exist".to_string()))
+    } else {
+        match state
+            .mediainfo_channel
+            .lock()
+            .await
+            .send(VideoMediaInfoChannelMessage::new(path, None))
+            .await
+        {
+            Ok(_) => Ok(wrap_success(None)),
+            Err(e) => {
+                error!("Sending message to media info channel failed {}", e);
+                Ok(wrap_failure(e.to_string()))
+            }
+        }
+    }
 }
 
 #[tauri::command]
@@ -307,9 +329,10 @@ pub struct EmitProgress {
 }
 
 fn main() {
-    init().unwrap();
     let (thumbnail_input_tx, thumbnail_input_rx) = tokio::sync::mpsc::channel(1);
     let (thumbnail_output_tx, thumbnail_output_rx) = tokio::sync::mpsc::channel(1);
+    let (mediainfo_input_tx, mediainfo_input_rx) = tokio::sync::mpsc::channel(1);
+    let (mediainfo_output_tx, mediainfo_output_rx) = tokio::sync::mpsc::channel(1);
 
     tauri::Builder::default()
         .manage(AppState {
@@ -318,6 +341,7 @@ fn main() {
             thumbnail_cache: Default::default(),
             video_cache: Default::default(),
             thumbnail_channel: tokio::sync::Mutex::new(thumbnail_input_tx),
+            mediainfo_channel: tokio::sync::Mutex::new(mediainfo_input_tx),
         })
         .plugin(
             tauri_plugin_log::Builder::default()
@@ -336,7 +360,7 @@ fn main() {
             set_watched,
             open_video,
             set_video_name,
-            get_metadata,
+            get_media_info,
             set_video_notes,
             delete_path,
             open_path
@@ -387,6 +411,38 @@ fn main() {
                         Ok(_) => Ok(()),
                         Err(e) => {
                             error!("Thumbnail output channels failed {}", e.to_string());
+                            Err(e)
+                        }
+                    }
+                });
+            }
+            // Mediainfo input async task
+            {
+                tauri::async_runtime::spawn(async move {
+                    match mediainfo::process_mediainfo_input_channels(
+                        mediainfo_input_rx,
+                        mediainfo_output_tx,
+                    )
+                    .await
+                    {
+                        Ok(_) => Ok(()),
+                        Err(e) => {
+                            error!("Mediainfo input channels failed {}", e.to_string());
+                            Err(e)
+                        }
+                    }
+                });
+            }
+            // Mediainfo output async task
+            {
+                let handle = Arc::clone(&handle);
+                tauri::async_runtime::spawn(async move {
+                    match mediainfo::process_mediainfo_output_channels(&handle, mediainfo_output_rx)
+                        .await
+                    {
+                        Ok(_) => Ok(()),
+                        Err(e) => {
+                            error!("Mediainfo input channels failed {}", e.to_string());
                             Err(e)
                         }
                     }
