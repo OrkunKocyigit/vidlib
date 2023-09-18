@@ -391,6 +391,7 @@ fn create_decoder_context(
         codec_context
             .apply_codecpar(&codec_parameters)
             .context("Failed to apply codec parameters")?;
+        codec_context.set_framerate(video_stream.avg_frame_rate);
         codec_context
             .open(None)
             .context("Can't open the codec context")?;
