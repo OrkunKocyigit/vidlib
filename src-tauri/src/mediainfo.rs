@@ -128,11 +128,9 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
                     builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
                 }
             }
-            let fps = video_stream.avg_frame_rate.den & video_stream.avg_frame_rate.num;
-            if fps > 0 {
-                builder.framerate(Some(
-                    (av_q2d(video_stream.avg_frame_rate) * 100.0).round() / 100.0,
-                ));
+            let fps = av_q2d(video_stream.avg_frame_rate);
+            if fps > 0.0 {
+                builder.framerate(Some((fps * 100.0).round() / 100.0));
             }
         }
     }
