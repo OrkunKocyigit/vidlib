@@ -3,10 +3,10 @@ export interface VideoMediaInfo {
   height?: number;
   framerate?: string;
   filesize?: number;
-  bitrate?: number;
-  length?: string;
+  bitrate?: string;
+  length: string;
   codec?: string;
-  abitrate?: number;
+  abitrate?: string;
   acodec?: string;
   asample?: string;
 }

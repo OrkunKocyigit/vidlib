@@ -1,9 +1,12 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Error;
-use rsmpeg::avcodec::AVCodecRef;
-use rsmpeg::avutil::{av_q2d, AVRational};
-use rsmpeg::ffi::{AVMediaType_AVMEDIA_TYPE_AUDIO, AVMediaType_AVMEDIA_TYPE_VIDEO};
+use rsmpeg::avcodec::{AVCodecContext, AVCodecRef};
+use rsmpeg::avutil::av_q2d;
+use rsmpeg::ffi::{
+    av_get_bits_per_sample, AVMediaType_AVMEDIA_TYPE_AUDIO, AVMediaType_AVMEDIA_TYPE_VIDEO,
+    AV_TIME_BASE,
+};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -21,17 +24,16 @@ pub struct VideoMediaInfo {
     #[builder(default = "None")]
     filesize: Option<String>,
     #[builder(default = "None")]
-    bitrate: Option<i64>,
-    #[builder(default = "None")]
-    length: Option<String>,
+    bitrate: Option<String>,
+    length: String,
     #[builder(default = "None")]
     codec: Option<String>,
     #[builder(default = "None")]
-    abitrate: Option<i64>,
+    abitrate: Option<String>,
     #[builder(default = "None")]
     acodec: Option<String>,
     #[builder(default = "None")]
-    asample: Option<i32>,
+    asample: Option<String>,
 }
 // Events
 #[derive(Clone, Serialize)]
@@ -102,61 +104,100 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
         video_path.metadata().map(|m| m.len()).unwrap_or(0),
     )));
     let input_context = thumbnail::create_input_context(video_path)?;
+    builder.length(format_duration(input_context.duration));
+    if input_context.bit_rate > 0 {
+        builder.bitrate(Some(format!("{} kb/s", input_context.bit_rate / 1000)));
+    }
     if let Ok(Some((index, codec))) = input_context.find_best_stream(AVMediaType_AVMEDIA_TYPE_VIDEO)
     {
         if let Some(video_stream) = input_context.streams().get(index) {
+            builder.codec(get_codec_name(&codec));
             let params = video_stream.codecpar();
-            builder.width(Some(params.width));
-            builder.height(Some(params.height));
-            let fps = (av_q2d(video_stream.avg_frame_rate) * 100.0).round() / 100.0;
-            builder.framerate(Some(fps));
-            let mut bitrate = params.bit_rate;
-            if bitrate <= 0 {
-                bitrate = input_context.bit_rate;
+            if params.width > 0 {
+                builder.width(Some(params.width));
+                builder.height(Some(params.height));
             }
-            builder.bitrate(Some(bitrate / 1024));
-            let mut duration = video_stream.duration;
-            if duration <= 0 {
-                duration = input_context.duration;
+            if params.bit_rate > 0 {
+                builder.bitrate(Some(format!("{} kb/s", params.bit_rate / 1000)));
+            } else {
+                let mut codec_context = AVCodecContext::new(&codec);
+                if codec_context.apply_codecpar(&params).is_ok()
+                    && codec_context.open(None).is_ok()
+                    && codec_context.rc_max_rate > 0
+                {
+                    builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
+                }
             }
-            let time_base = video_stream.time_base;
-            builder.length(Some(format_duration(duration, time_base)));
-            let mut codec_name = codec.long_name().to_string_lossy().to_string();
-            get_codec_name(codec, &mut codec_name);
-            builder.codec(Some(codec_name));
+            let fps = video_stream.avg_frame_rate.den & video_stream.avg_frame_rate.num;
+            if fps > 0 {
+                builder.framerate(Some(
+                    (av_q2d(video_stream.avg_frame_rate) * 100.0).round() / 100.0,
+                ));
+            }
         }
     }
     if let Ok(Some((index, codec))) = input_context.find_best_stream(AVMediaType_AVMEDIA_TYPE_AUDIO)
     {
         if let Some(audio_stream) = input_context.streams().get(index) {
+            builder.acodec(get_codec_name(&codec));
             let params = audio_stream.codecpar();
-            builder.abitrate(Some(params.bit_rate / 1024));
-            let mut codec_name = codec.long_name().to_string_lossy().to_string();
-            get_codec_name(codec, &mut codec_name);
-            builder.acodec(Some(codec_name));
-            builder.asample(Some(params.sample_rate));
+            if params.sample_rate > 0 {
+                builder.asample(Some(format!("{} Hz", params.sample_rate)));
+            }
+
+            let mut bit_rate;
+            let bits_per_sample;
+            unsafe {
+                bits_per_sample = av_get_bits_per_sample(codec.id) as i64;
+            }
+            if bits_per_sample > 0 {
+                bit_rate = params.sample_rate as i64 * params.ch_layout.nb_channels as i64;
+                if bit_rate > i64::MAX / bits_per_sample {
+                    bit_rate = 0;
+                } else {
+                    bit_rate *= bits_per_sample;
+                }
+            } else {
+                bit_rate = params.bit_rate;
+            }
+            if bit_rate > 0 {
+                builder.abitrate(Some(format!("{} kb/s", bit_rate / 1000)));
+            } else {
+                let mut codec_context = AVCodecContext::new(&codec);
+                if codec_context.apply_codecpar(&params).is_ok()
+                    && codec_context.open(None).is_ok()
+                    && codec_context.rc_max_rate > 0
+                {
+                    builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
+                }
+            }
         }
     }
     Ok(builder.build()?)
 }
 
-fn get_codec_name(codec: AVCodecRef, codec_name: &mut String) {
+fn get_codec_name(codec: &AVCodecRef) -> Option<String> {
+    let mut codec_name = codec.long_name().to_string_lossy().to_string();
     if codec_name.contains('/') {
         let new_codec_name = codec_name
             .split_once('/')
             .map_or(codec.name().to_string_lossy().to_string(), |c| {
                 c.0.trim().to_string()
             });
-        *codec_name = new_codec_name;
+        codec_name = new_codec_name;
     }
+    Some(codec_name)
 }
 
-fn format_duration(duration: i64, timebase: AVRational) -> String {
-    let seconds = duration * i64::from(timebase.num) / i64::from(timebase.den);
-    let hours = seconds / 3600;
-    let minutes = (seconds % 3600) / 60;
-    let seconds = seconds % 60;
-    let milliseconds = (duration * 1000 * i64::from(timebase.num) / i64::from(timebase.den)) % 1000;
+fn format_duration(duration: i64) -> String {
+    let duration = duration + (if duration <= i64::MAX - 5000 { 5000 } else { 0 });
+    let mut seconds = duration / AV_TIME_BASE as i64;
+    let us = duration % AV_TIME_BASE as i64;
+    let milliseconds = (100 * us) / AV_TIME_BASE as i64;
+    let mut minutes = seconds / 60;
+    seconds %= 60;
+    let hours = minutes / 60;
+    minutes %= 60;
     format!(
         "{:02}:{:02}:{:02}.{:03}",
         hours, minutes, seconds, milliseconds
