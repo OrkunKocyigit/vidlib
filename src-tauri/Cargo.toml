@@ -39,7 +39,7 @@ git = "https://github.com/microsoft/vcpkg"
 rev = "d99b693"
 
 [package.metadata.vcpkg.target]
-x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md", dependencies = ["ffmpeg[libpng]"] }
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md", dependencies = ["ffmpeg[libpng,dav1d]"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

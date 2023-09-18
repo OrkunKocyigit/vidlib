@@ -253,7 +253,7 @@ async fn get_media_info(
     state: State<'_, AppState>,
     id: String,
     path: &str,
-) -> Result<Response<Option<String>>, ()> {
+) -> Result<Response<Option<()>>, ()> {
     debug!("Get Metadata Start");
     let path = PathBuf::from(path);
     if !path.is_file() {

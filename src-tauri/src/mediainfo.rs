@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Error;
+use rsmpeg::avcodec::AVCodecRef;
 use rsmpeg::avutil::{av_q2d, AVRational};
 use rsmpeg::ffi::{AVMediaType_AVMEDIA_TYPE_AUDIO, AVMediaType_AVMEDIA_TYPE_VIDEO};
 use serde::{Deserialize, Serialize};
@@ -35,12 +36,12 @@ pub struct VideoMediaInfo {
 // Events
 #[derive(Clone, Serialize)]
 pub struct VideoMediaInfoEmitEvent {
-    path: VideoMediaInfo,
+    media_info: VideoMediaInfo,
 }
 
 impl VideoMediaInfoEmitEvent {
     pub fn new(path: VideoMediaInfo) -> Self {
-        Self { path }
+        Self { media_info: path }
     }
 }
 
@@ -109,23 +110,38 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
             builder.height(Some(params.height));
             let fps = av_q2d(video_stream.avg_frame_rate);
             builder.framerate(Some(fps));
-            builder.bitrate(Some(params.bit_rate));
+            builder.bitrate(Some(params.bit_rate / 1024));
             let duration = video_stream.duration;
             let time_base = video_stream.time_base;
             builder.length(Some(format_duration(duration, time_base)));
-            builder.codec(Some(codec.name().to_string_lossy().to_string()));
+            let mut codec_name = codec.long_name().to_string_lossy().to_string();
+            get_codec_name(codec, &mut codec_name);
+            builder.codec(Some(codec_name));
         }
     }
     if let Ok(Some((index, codec))) = input_context.find_best_stream(AVMediaType_AVMEDIA_TYPE_AUDIO)
     {
         if let Some(audio_stream) = input_context.streams().get(index) {
             let params = audio_stream.codecpar();
-            builder.abitrate(Some(params.bit_rate));
-            builder.acodec(Some(codec.name().to_string_lossy().to_string()));
+            builder.abitrate(Some(params.bit_rate / 1024));
+            let mut codec_name = codec.long_name().to_string_lossy().to_string();
+            get_codec_name(codec, &mut codec_name);
+            builder.acodec(Some(codec_name));
             builder.asample(Some(params.sample_rate));
         }
     }
     Ok(builder.build()?)
+}
+
+fn get_codec_name(codec: AVCodecRef, codec_name: &mut String) {
+    if codec_name.contains('/') {
+        let new_codec_name = codec_name
+            .split_once('/')
+            .map_or(codec.name().to_string_lossy().to_string(), |c| {
+                c.0.trim().to_string()
+            });
+        *codec_name = new_codec_name;
+    }
 }
 
 fn format_duration(duration: i64, timebase: AVRational) -> String {

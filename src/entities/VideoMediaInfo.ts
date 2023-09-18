@@ -1,4 +1,4 @@
-export interface VideoMetadata {
+export interface VideoMediaInfo {
   width?: number;
   height?: number;
   framerate?: string;
