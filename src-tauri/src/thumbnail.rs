@@ -12,7 +12,7 @@ use rsmpeg::avutil::{AVFrame, AVFrameWithImage, AVImage};
 use rsmpeg::error::RsmpegError;
 use rsmpeg::ffi;
 use rsmpeg::ffi::{
-    av_seek_frame, AVCodecID_AV_CODEC_ID_PNG, AVSEEK_FLAG_BACKWARD, AVSEEK_FLAG_FRAME,
+    av_seek_frame, AVCodecID_AV_CODEC_ID_PNG, AVSEEK_FLAG_BACKWARD, AVSEEK_FLAG_FRAME, AV_TIME_BASE,
 };
 use rsmpeg::swscale::SwsContext;
 use serde::Serialize;
@@ -238,10 +238,9 @@ fn generate_thumbnail<P: AsRef<Path>, R: AsRef<Path>>(
     );
     let mut input_context = create_input_context(video_location)?;
     debug!("Input context created");
-    let (video_index, mut decoder_context, seek_location) =
-        create_decoder_context(&mut input_context)?;
+    let (video_index, mut decoder_context) = create_decoder_context(&mut input_context)?;
     debug!("Decoding context created");
-    seek_to_middle(&mut input_context, video_index, seek_location);
+    seek_to_middle(&mut input_context);
     debug!("Seeked to middle of the video");
     let thumbnail_frame =
         get_thumbnail_frame(&mut input_context, video_index, &mut decoder_context)?;
@@ -348,16 +347,18 @@ fn get_thumbnail_frame(
     Ok(thumbnail_frame)
 }
 
-fn seek_to_middle(
-    input_context: &mut AVFormatContextInput,
-    video_index: usize,
-    seek_location: i64,
-) {
+fn seek_to_middle(input_context: &mut AVFormatContextInput) {
+    let duration = input_context.duration
+        + (if input_context.duration <= i64::MAX - 5000 {
+            5000
+        } else {
+            0
+        });
     unsafe {
         av_seek_frame(
             input_context.as_mut_ptr(),
-            video_index as i32,
-            seek_location,
+            -1,
+            duration / 2,
             (AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME) as i32,
         )
     };
@@ -376,12 +377,12 @@ pub fn create_input_context<P: AsRef<Path>>(
 
 fn create_decoder_context(
     input_context: &mut AVFormatContextInput,
-) -> Result<(usize, AVCodecContext, i64), Error> {
+) -> Result<(usize, AVCodecContext), Error> {
     let (video_index, video_codec) = input_context
         .find_best_stream(ffi::AVMediaType_AVMEDIA_TYPE_VIDEO)
         .context("Video stream can't be find")?
         .context("Video stream codec can't be find")?;
-    let (decoder_context, seek_location) = {
+    let decoder_context = {
         let video_stream = input_context
             .streams()
             .get(video_index)
@@ -395,9 +396,9 @@ fn create_decoder_context(
         codec_context
             .open(None)
             .context("Can't open the codec context")?;
-        (codec_context, video_stream.duration / 2)
+        codec_context
     };
-    Ok((video_index, decoder_context, seek_location))
+    Ok((video_index, decoder_context))
 }
 
 fn save_image<P: AsRef<Path>>(save_location: P, data: &[u8]) -> Result<PathBuf, Error> {
