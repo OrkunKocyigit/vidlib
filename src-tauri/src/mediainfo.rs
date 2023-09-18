@@ -111,11 +111,14 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
             let fps = (av_q2d(video_stream.avg_frame_rate) * 100.0).round() / 100.0;
             builder.framerate(Some(fps));
             let mut bitrate = params.bit_rate;
-            if bitrate == 0 {
+            if bitrate <= 0 {
                 bitrate = input_context.bit_rate;
             }
             builder.bitrate(Some(bitrate / 1024));
-            let duration = video_stream.duration;
+            let mut duration = video_stream.duration;
+            if duration <= 0 {
+                duration = input_context.duration;
+            }
             let time_base = video_stream.time_base;
             builder.length(Some(format_duration(duration, time_base)));
             let mut codec_name = codec.long_name().to_string_lossy().to_string();
