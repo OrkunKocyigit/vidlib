@@ -36,8 +36,10 @@ jobs:
       - name: install dependencies (Windows only)
         if: matrix.platform == 'windows-latest'
         run: |
-          choco install --yes gstreamer gstreamer-devel
-          Add-Content $env:GITHUB_PATH "C:\gstreamer\1.0\msvc_x86_64\bin"
+          cargo install cargo-vcpkg
+          cd ./src-tauri
+          cargo vcpkg --verbose build
+          cd..
       - name: install frontend dependencies
         run: pnpm install
       - uses: tauri-apps/tauri-action@v0
