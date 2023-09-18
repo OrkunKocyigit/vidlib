@@ -23,7 +23,7 @@ anyhow = "1.0.71"
 opener = "0.6.1"
 derive_builder = "0.12.0"
 log = "0.4.19"
-rsmpeg = { version = "0.14", features = ["ffmpeg6"]}
+rsmpeg = { version = "0.14", features = ["ffmpeg5"]}
 tokio = { version = "1.29", default-features = false, features = ["sync"] }
 
 [dependencies.xxhash-rust]
@@ -31,11 +31,11 @@ version = "0.8.6"
 features = ["xxh3"]
 
 [package.metadata.vcpkg]
-git = "https://github.com/OrkunKocyigit/vcpkg"
-rev = "3ee863c"
+git = "https://github.com/microsoft/vcpkg"
+rev = "e8c2a04"
 
 [package.metadata.vcpkg.target]
-x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md", dependencies = ["ffmpeg[all-gpl]"] }
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md", dependencies = ["ffmpeg[zlib,dav1d]"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
