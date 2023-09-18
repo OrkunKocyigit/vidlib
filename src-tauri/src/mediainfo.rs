@@ -110,7 +110,11 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
             builder.height(Some(params.height));
             let fps = av_q2d(video_stream.avg_frame_rate);
             builder.framerate(Some(fps));
-            builder.bitrate(Some(params.bit_rate / 1024));
+            let mut bitrate = params.bit_rate;
+            if bitrate == 0 {
+                bitrate = input_context.bit_rate;
+            }
+            builder.bitrate(Some(bitrate / 1024));
             let duration = video_stream.duration;
             let time_base = video_stream.time_base;
             builder.length(Some(format_duration(duration, time_base)));
