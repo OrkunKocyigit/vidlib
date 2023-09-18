@@ -233,6 +233,8 @@ impl<'a> FileScan<'a> {
 
         let mut root = FolderInfo::new(&self.path, 0);
         root.read_folder(&mut self.cache, emitter);
+        root.videos
+            .sort_by(|a, b| natord::compare(a.name(), b.name()));
 
         Ok(root)
     }
