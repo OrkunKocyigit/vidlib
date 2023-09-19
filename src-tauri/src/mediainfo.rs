@@ -64,7 +64,9 @@ pub async fn process_mediainfo_input_channels(
     mut mediainfo_input_rx: Receiver<VideoMediaInfoChannelMessage>,
     mediainfo_output_tx: Sender<VideoMediaInfoChannelMessage>,
 ) -> Result<(), Error> {
+    debug!("Media info input channel started");
     while let Some(input) = mediainfo_input_rx.recv().await {
+        debug!("Media info input message received");
         let media_info = create_media_info(&input.path);
         if let Ok(m) = media_info {
             debug!("Media info created: {:?}", m);
@@ -88,9 +90,12 @@ pub async fn process_mediainfo_output_channels(
     app: &AppHandle,
     mut mediainfo_output_rx: Receiver<VideoMediaInfoChannelMessage>,
 ) -> Result<(), Error> {
+    debug!("Media info output channel started");
     while let Some(input) = mediainfo_output_rx.recv().await {
+        debug!("Media info output message received");
         let emit_message = VideoMediaInfoEmitEvent::new(input.info.unwrap());
         let _ = app.emit_all(&format!("update_mediainfo_{}", input.id), emit_message);
+        debug!("Media info output message send for: {}", input.id);
     }
 
     Ok(())
@@ -100,10 +105,12 @@ pub async fn process_mediainfo_output_channels(
 fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Error> {
     let mut builder = VideoMediaInfoBuilder::create_empty();
     let video_path = video_path.as_ref();
+    debug!("Media info creation started for {}", video_path.display());
     builder.filesize(Some(util::format_file_size(
         video_path.metadata().map(|m| m.len()).unwrap_or(0),
     )));
     let input_context = thumbnail::create_input_context(video_path)?;
+    debug!("Input context created");
     builder.length(format_duration(input_context.duration));
     if input_context.bit_rate > 0 {
         builder.bitrate(Some(format!("{} kb/s", input_context.bit_rate / 1000)));
@@ -111,6 +118,7 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
     if let Ok(Some((index, codec))) = input_context.find_best_stream(AVMediaType_AVMEDIA_TYPE_VIDEO)
     {
         if let Some(video_stream) = input_context.streams().get(index) {
+            debug!("Video stream found video information will be created");
             builder.codec(get_codec_name(&codec));
             let params = video_stream.codecpar();
             if params.width > 0 {
@@ -132,11 +140,13 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
             if fps > 0.0 {
                 builder.framerate(Some((fps * 100.0).round() / 100.0));
             }
+            debug!("Video info creation done");
         }
     }
     if let Ok(Some((index, codec))) = input_context.find_best_stream(AVMediaType_AVMEDIA_TYPE_AUDIO)
     {
         if let Some(audio_stream) = input_context.streams().get(index) {
+            debug!("Audio stream found video information will be created");
             builder.acodec(get_codec_name(&codec));
             let params = audio_stream.codecpar();
             if params.sample_rate > 0 {
@@ -169,6 +179,7 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
                     builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
                 }
             }
+            debug!("Audio info creation done");
         }
     }
     Ok(builder.build()?)

@@ -260,6 +260,7 @@ async fn get_media_info(
         error!("File does not exist");
         Ok(wrap_failure("File does not exist".to_string()))
     } else {
+        debug!("Sending media info message to channel");
         match state
             .mediainfo_channel
             .lock()

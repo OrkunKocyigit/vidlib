@@ -12,7 +12,7 @@ use rsmpeg::avutil::{AVFrame, AVFrameWithImage, AVImage};
 use rsmpeg::error::RsmpegError;
 use rsmpeg::ffi;
 use rsmpeg::ffi::{
-    av_seek_frame, AVCodecID_AV_CODEC_ID_PNG, AVSEEK_FLAG_BACKWARD, AVSEEK_FLAG_FRAME, AV_TIME_BASE,
+    av_seek_frame, AVCodecID_AV_CODEC_ID_PNG, AVSEEK_FLAG_BACKWARD, AVSEEK_FLAG_FRAME,
 };
 use rsmpeg::swscale::SwsContext;
 use serde::Serialize;
