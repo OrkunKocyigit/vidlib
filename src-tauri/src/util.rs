@@ -31,7 +31,7 @@ fn log_enabled() -> bool {
 }
 
 pub fn get_log_targets() -> Vec<LogTarget> {
-    if cfg!(debug_assertions) {
+    if log_enabled() {
         vec![LogTarget::LogDir, LogTarget::Stdout, LogTarget::Webview]
     } else {
         vec![LogTarget::LogDir]

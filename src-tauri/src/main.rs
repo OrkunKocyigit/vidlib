@@ -25,7 +25,6 @@ use crate::state::{AppState, EmitTotalProgress};
 use crate::thumbnail::ThumbnailChannelMessage;
 
 mod database;
-mod ffmpeg_decoder;
 mod filescan;
 mod gui;
 mod mediainfo;
