@@ -12,9 +12,8 @@ export function SearchBar({ children }: Props): JSX.Element {
     <Group grow>
       <TextInput
         placeholder={t('searchbar.placeholder')}
-        icon={<IconSearch size="1rem" stroke={1.5}></IconSearch>}
-        rightSection={children}
-      ></TextInput>
+        leftSection={<IconSearch size="1rem" stroke={1.5}></IconSearch>}
+        rightSection={children}></TextInput>
     </Group>
   );
 }

@@ -12,12 +12,12 @@ export interface VideoHeaderProps {
 
 function VideoHeader(props: VideoHeaderProps): JSX.Element {
   return (
-    <Group noWrap align={'start'}>
+    <Group wrap="nowrap" align="start">
       <VideoThumbnail video={props.video}></VideoThumbnail>
-      <Flex direction={'column'} gap={'md'}>
+      <Flex direction="column" gap="md">
         <VideoName video={props.video}></VideoName>
         <Text>{props.video.path}</Text>
-        <Flex gap={'lg'}>
+        <Flex gap="lg">
           <VideoRating video={props.video}></VideoRating>
           <VideoWatch video={props.video}></VideoWatch>
           <VideoLaunch video={props.video}></VideoLaunch>

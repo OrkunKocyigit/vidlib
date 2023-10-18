@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react';
 export interface VideoNameProps {
   video: VideoFile;
 }
+
 function VideoName(props: VideoNameProps): JSX.Element {
   const [name, setName] = useState(props.video.video?.name);
+
   function setText(newName: string): void {
     SetName(props.video, newName)
       .then((value) => {
@@ -28,10 +30,9 @@ function VideoName(props: VideoNameProps): JSX.Element {
       text={name ?? ''}
       setText={setText}
       titleProps={{ order: 4 }}
-      editButtonProps={{ color: 'blue' }}
-      saveButtonProps={{ color: 'green' }}
-      cancelButtonProps={{ color: 'red' }}
-    ></UpdatableText>
+      editButtonProps={{ color: 'blue', variant: 'subtle' }}
+      saveButtonProps={{ color: 'green', variant: 'subtle' }}
+      cancelButtonProps={{ color: 'red', variant: 'subtle' }}></UpdatableText>
   );
 }
 

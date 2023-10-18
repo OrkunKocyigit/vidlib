@@ -1,23 +1,24 @@
 import './App.css';
-import React, { useState } from 'react';
+import '@mantine/core/styles.css';
+import React from 'react';
 import MainView from './pages/main/MainView';
-import { type ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
+import { ColorSchemeScript, createTheme, MantineProvider } from '@mantine/core';
 import { ContextMenuProvider } from 'mantine-contextmenu';
 
-function App(): JSX.Element {
-  const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
-  const toggleColorScheme = (value?: ColorScheme): void => {
-    setColorScheme(value ?? (colorScheme === 'dark' ? 'light' : 'dark'));
-  };
+const theme = createTheme({
+  primaryColor: 'red'
+});
 
+function App(): JSX.Element {
   return (
-    <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-      <MantineProvider withGlobalStyles withNormalizeCSS theme={{ primaryColor: 'red' }}>
+    <>
+      <ColorSchemeScript defaultColorScheme="auto"></ColorSchemeScript>
+      <MantineProvider theme={theme} defaultColorScheme="light">
         <ContextMenuProvider>
           <MainView></MainView>
         </ContextMenuProvider>
       </MantineProvider>
-    </ColorSchemeProvider>
+    </>
   );
 }
 

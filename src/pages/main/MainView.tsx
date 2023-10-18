@@ -14,7 +14,10 @@ function MainView(): JSX.Element {
   const [folders, setFolders] = useState<FolderInfo[]>([]);
   const [wizardOpened, { open, close }] = useDisclosure(false);
   const [video, setVideo] = useState<VideoFile | undefined>();
-  const videoContext: IVideoContext = { video, setVideo };
+  const videoContext: IVideoContext = {
+    video,
+    setVideo
+  };
 
   useEffect(() => {
     GetFolders()
@@ -59,13 +62,17 @@ function MainView(): JSX.Element {
     <>
       <AppShell
         padding="md"
-        navbar={
-          <VideoContext.Provider value={videoContext}>
-            <SideBar folders={folders} openWizard={open}></SideBar>
-          </VideoContext.Provider>
-        }
-      >
-        <VideoView video={video}></VideoView>
+        navbar={{
+          width: '30%',
+          breakpoint: 'xs'
+        }}>
+        <VideoContext.Provider value={videoContext}>
+          <SideBar folders={folders} openWizard={open}></SideBar>
+        </VideoContext.Provider>
+
+        <AppShell.Main>
+          <VideoView video={video}></VideoView>
+        </AppShell.Main>
       </AppShell>
       <Modal opened={wizardOpened} onClose={close} withCloseButton={false} centered>
         <AddFolderWizard onFolderAdd={onFolderAdd}></AddFolderWizard>

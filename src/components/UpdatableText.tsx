@@ -48,8 +48,7 @@ function UpdatableText(props: UpdatableTextInnerProps): JSX.Element {
             value={newText}
             onChange={(e) => {
               setNewText(e.target.value);
-            }}
-          ></TextInput>
+            }}></TextInput>
         ) : (
           <Title {...props.titleProps}>{props.text}</Title>
         )}

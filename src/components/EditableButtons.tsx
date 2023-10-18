@@ -1,4 +1,4 @@
-import { ActionIcon, type ActionIconProps, Group, useComponentDefaultProps } from '@mantine/core';
+import { ActionIcon, type ActionIconProps, Group, useProps } from '@mantine/core';
 import { IconCheck, IconEdit, IconX } from '@tabler/icons-react';
 
 export interface EditableButtonsProps {
@@ -26,7 +26,7 @@ function EditableButtons(props: EditableButtonsProps): JSX.Element {
     onSaveButtonClick,
     editButtonProps,
     onEditButtonClick
-  } = useComponentDefaultProps('EditableButtons', defaultProps, props);
+  } = useProps('EditableButtons', defaultProps, props);
   return (
     <>
       {editable ? (

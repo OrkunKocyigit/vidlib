@@ -65,15 +65,11 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
               {name}
             </Text>
           ) : null}
-          <Progress
-            color="green"
-            radius="md"
-            size="xl"
-            value={progress}
-            label={`${current} / ${total}`}
-            striped
-            animate
-          />
+          <Progress.Root size="xl" radius="md">
+            <Progress.Section color="green" striped animated value={progress}>
+              <Progress.Label>{`${current} / ${total}`}</Progress.Label>
+            </Progress.Section>
+          </Progress.Root>
         </>
       ) : null}
       <FolderInput path={path} onSelect={setPath}></FolderInput>

@@ -1,9 +1,10 @@
-import { Box, Image, Text } from '@mantine/core';
+import { Box, Image } from '@mantine/core';
 import { type VideoFile } from '../../../entities/VideoFile';
 import { useEffect, useState } from 'react';
 import { GetThumbnail, type GetThumbnailEvent } from '../../../service/GetThumbnail';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { convertFileSrc } from '@tauri-apps/api/tauri';
+import classes from './VideoThumbnail.module.pcss';
 
 export interface VideoThumbnailProps {
   video?: VideoFile;
@@ -51,19 +52,14 @@ function VideoThumbnail(props: VideoThumbnailProps): JSX.Element {
   }, [props.video]);
 
   return (
-    <Box
-      mr={'md'}
-      sx={(theme) => ({
-        backgroundColor: theme.colorScheme === 'dark' ? 'white' : 'black'
-      })}>
+    <Box mr="md" className={classes.box}>
       <Image
-        width={'10rem'}
-        height={'10rem'}
-        mx={'auto'}
-        fit={'contain'}
-        radius={'md'}
-        placeholder={<Text align={'center'}>Thumbnail</Text>}
-        withPlaceholder
+        w="10rem"
+        h="10rem"
+        mx="auto"
+        fit="contain"
+        radius="md"
+        fallbackSrc="https://placehold.co/900x600?text=Thumbnail"
         src={imageUrl(imageSrc)}></Image>
     </Box>
   );

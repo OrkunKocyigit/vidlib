@@ -29,4 +29,8 @@ export class VideoFile extends FileInfo implements IVideoFile {
   get displayName(): string {
     return this.name;
   }
+
+  selected(id: string | undefined): boolean {
+    return this.id === id;
+  }
 }

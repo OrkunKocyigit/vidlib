@@ -10,7 +10,7 @@ import {
   Menu,
   ThemeIcon,
   UnstyledButton,
-  useComponentDefaultProps
+  useProps
 } from '@mantine/core';
 import {
   IconArrowDown,
@@ -21,13 +21,13 @@ import {
 } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import styled from 'styled-components';
-import useStyles, { type FolderInfoViewVariants } from './FolderInfoView.styles';
 import { useContextMenu } from 'mantine-contextmenu';
 import { useTranslation } from 'react-i18next';
 import { DeletePath } from '../../../service/DeletePath';
-import { type ContextMenuItemOptions } from 'mantine-contextmenu/dist/types';
 import { OpenPath } from '../../../service/OpenPath';
 import { listen } from '@tauri-apps/api/event';
+import classes from './FolderInfoView.module.pcss';
+import { type ContextMenuItemOptions } from 'mantine-contextmenu/dist/types/types';
 
 export interface FolderInfoProps {
   folder: FolderInfo;
@@ -66,12 +66,11 @@ function renderFolderIcon(folder: FolderInfo, state: boolean): JSX.Element | nul
 }
 
 function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
-  const { folder, showDelete } = useComponentDefaultProps('FolderInfo', defaultProps, props);
+  const { folder, showDelete } = useProps('FolderInfo', defaultProps, props);
   const [opened, { toggle }] = useDisclosure(false);
-  const [variant, setVariant] = useState<FolderInfoViewVariants>(getVariant(props.folder.watched));
-  const { classes } = useStyles({ variant });
   const showContextMenu = useContextMenu();
   const { t } = useTranslation();
+  const [watched, setWatched] = useState(folder.watched);
 
   function getDefaultMenu(): ContextMenuItemOptions[] {
     return [
@@ -80,7 +79,9 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
         icon: <IconFolderOpen size={16} color={'blue'}></IconFolderOpen>,
         title: t('open.path'),
         onClick: () => {
-          openPath();
+          OpenPath(folder.path).catch((reason) => {
+            console.error(reason);
+          });
         }
       }
     ];
@@ -94,45 +95,27 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
         icon: <IconX size={16} color={'red'}></IconX>,
         title: t('video.delete'),
         onClick: () => {
-          deletePath();
+          DeletePath(folder.path).catch((reason) => {
+            console.error(reason);
+          });
         }
       });
     }
     return menuItems;
   }, [showDelete]);
 
-  function deletePath(): void {
-    DeletePath(folder.path).catch((reason) => {
-      console.error(reason);
-    });
-  }
-
-  function openPath(): void {
-    OpenPath(folder.path).catch((reason) => {
-      console.error(reason);
-    });
-  }
-
-  function getVariant(watched: boolean): FolderInfoViewVariants {
-    if (watched) {
-      return 'watched';
-    } else {
-      return undefined;
-    }
-  }
-
   useEffect(() => {
     const eventName = `update_watch_${props.folder.id}`;
     const unlisten = listen(eventName, () => {
-      let watched;
       if (props.folder.videos.length <= 0) {
-        watched = false;
+        setWatched(false);
       } else {
-        watched = props.folder.videos
-          .map((value) => value.watched)
-          .reduce((previousValue, currentValue) => previousValue && currentValue, true);
+        setWatched(
+          props.folder.videos
+            .map((value) => value.watched)
+            .reduce((previousValue, currentValue) => previousValue && currentValue, true)
+        );
       }
-      setVariant(getVariant(watched));
     });
     return () => {
       unlisten
@@ -149,10 +132,9 @@ function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
     <>
       <UnstyledButton
         onClick={toggle}
-        className={classes.control}
-        onContextMenu={showContextMenu(contextMenu())}
-      >
-        <Group spacing={0} noWrap>
+        className={watched ? classes.watchedControl : classes.control}
+        onContextMenu={showContextMenu(contextMenu())}>
+        <Group gap={0} wrap="nowrap">
           <Flex align={'center'} mr={'auto'} pr={'md'}>
             <ThemeIcon size={20} variant={'outline'}>
               {renderFolderIcon(folder, opened)}

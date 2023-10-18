@@ -17,8 +17,8 @@ function VideoLaunch(props: VideoLaunchProps): JSX.Element {
   }
 
   return (
-    <Group align={'center'}>
-      <ActionIcon color={'blue'} onClick={openVideo.bind(null, props.video)}>
+    <Group align="center">
+      <ActionIcon color="blue" variant="subtle" onClick={openVideo.bind(null, props.video)}>
         <IconPlayerPlay></IconPlayerPlay>
       </ActionIcon>
       <Text>{t('video.launch.play')}</Text>

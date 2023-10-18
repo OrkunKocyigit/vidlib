@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { type VideoMediaInfo } from '../../../entities/VideoMediaInfo';
 import { GetMediaInfo, type VideoMediaInfoEmitEvent } from '../../../service/GetMediaInfo';
 import { Grid, Paper, Text } from '@mantine/core';
-import useStyles from './VideoMetadataView.styles';
 import { useTranslation } from 'react-i18next';
 import { listen } from '@tauri-apps/api/event';
 
@@ -25,9 +24,9 @@ export function gridFields(): Array<keyof VideoMediaInfo> {
     'asample'
   ];
 }
+
 function VideoMetadataView(props: VideoMediaInfoProps): JSX.Element {
   const [metadata, setMetadata] = useState<VideoMediaInfo | undefined>(undefined);
-  const { classes } = useStyles();
   useEffect(() => {
     setMetadata(undefined);
     GetMediaInfo(props.video.id, props.video.path).catch((reason) => {
@@ -50,18 +49,23 @@ function VideoMetadataView(props: VideoMediaInfoProps): JSX.Element {
   const { t } = useTranslation();
 
   return (
-    <Grid gutter={'sm'}>
+    <Grid gutter="sm">
       {metadata !== undefined
         ? gridFields().map((key, index) => (
-            <Grid.Col key={key} sm={12} md={6}>
-              <Paper shadow={'sm'} radius={'md'} p={'sm'} withBorder>
-                <Grid className={classes.data}>
-                  <Grid.Col sm={7} className={classes.header}>
-                    <Text tt={'capitalize'} fw={700}>
+            <Grid.Col
+              key={key}
+              span={{
+                sm: 12,
+                md: 6
+              }}>
+              <Paper shadow="sm" radius="md" p="sm" withBorder>
+                <Grid>
+                  <Grid.Col span={{ sm: 7 }}>
+                    <Text tt="capitalize" fw={700}>
                       {t(key)}
                     </Text>
                   </Grid.Col>
-                  <Grid.Col sm={5} className={classes.content}>
+                  <Grid.Col span={{ sm: 5 }}>
                     {metadata[key] != null ? metadata[key] : t('none')}
                   </Grid.Col>
                 </Grid>

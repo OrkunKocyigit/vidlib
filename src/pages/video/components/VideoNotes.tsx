@@ -5,17 +5,17 @@ import EditableButtons from '../../../components/EditableButtons';
 import { useDisclosure } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 import { SetNotes } from '../../../service/SetNotes';
-import useStyles from './VideoNotes.styles';
+import classes from './VideoNotes.module.pcss';
 
 export interface VideoNotesProps {
   video: VideoFile;
 }
+
 function VideoNotes(props: VideoNotesProps): JSX.Element {
   const { t } = useTranslation();
   const [editable, { open, close }] = useDisclosure(false);
   const [notes, setNotes] = useState(props.video.video?.notes);
   const [viewNotes, setViewNotes] = useState(props.video.video?.notes);
-  const { classes } = useStyles();
 
   useEffect(() => {
     close();
@@ -48,12 +48,20 @@ function VideoNotes(props: VideoNotesProps): JSX.Element {
         <EditableButtons
           editable={editable}
           onEditButtonClick={open}
-          editButtonProps={{ color: 'blue' }}
+          editButtonProps={{
+            color: 'blue',
+            variant: 'subtle'
+          }}
           onSaveButtonClick={onSaveNotes}
-          saveButtonProps={{ color: 'green' }}
+          saveButtonProps={{
+            color: 'green',
+            variant: 'subtle'
+          }}
           onCancelButtonClick={onCancelNotes}
-          cancelButtonProps={{ color: 'red' }}
-        ></EditableButtons>
+          cancelButtonProps={{
+            color: 'red',
+            variant: 'subtle'
+          }}></EditableButtons>
       </Group>
       {editable ? (
         <Textarea
@@ -64,8 +72,7 @@ function VideoNotes(props: VideoNotesProps): JSX.Element {
           autosize
           onChange={(e) => {
             setNotes(e.target.value);
-          }}
-        ></Textarea>
+          }}></Textarea>
       ) : (
         <Text className={classes.text}>{notes}</Text>
       )}
