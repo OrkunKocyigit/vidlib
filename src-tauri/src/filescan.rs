@@ -46,8 +46,8 @@ impl VideoFile {
         if let Some(v) = c.as_ref().and_then(|c| c.get_video(path_ref)) {
             if file_size == v.filesize() {
                 return v.id().into();
-            } else {
-                c.as_mut().map(|c| c.delete_video(path_ref));
+            } else if let Some(c) = c.as_mut() {
+                c.delete_video(path_ref)
             }
         }
 
@@ -71,8 +71,9 @@ impl VideoFile {
         }
 
         let id = format!("{:x}", hasher.finish());
-        c.as_mut()
-            .map(|c| c.add_video(path_ref, VideoCacheItem::new(file_size, id.clone())));
+        if let Some(c) = c.as_mut() {
+            c.add_video(path_ref, VideoCacheItem::new(file_size, id.clone()))
+        }
         id
     }
 

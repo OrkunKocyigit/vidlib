@@ -56,7 +56,7 @@ fn upgrade_database(connection: &mut Connection, version: u32) -> Result<(), Err
 pub fn get_paths(connection: &Connection) -> Result<Vec<String>, Error> {
     let mut query = connection.prepare("SELECT path FROM PATHS ORDER BY id")?;
     let rows = query.query_map([], |row| row.get("path"))?;
-    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    rows.collect::<Result<Vec<_>, _>>()
 }
 
 pub fn add_path(connection: &Connection, path: &String) -> Result<(), Error> {
@@ -79,7 +79,7 @@ pub fn get_videos(connection: &Connection) -> Result<HashMap<String, VideoEntry>
             ),
         ))
     })?;
-    Ok(rows.collect::<Result<HashMap<_, _>, _>>()?)
+    rows.collect::<Result<HashMap<_, _>, _>>()
 }
 
 pub fn add_video(
@@ -125,12 +125,7 @@ pub(crate) fn update_watched(
     Some(())
 }
 
-pub(crate) fn add_video_cache(
-    connection: &Connection,
-    path: &String,
-    size: &u64,
-    id: &String,
-) -> () {
+pub(crate) fn add_video_cache(connection: &Connection, path: &String, size: &u64, id: &String) {
     connection
         .prepare("INSERT INTO VIDEO_CACHE(path, size, id) VALUES(@path, @size, @id)")
         .expect("Query Failed")
@@ -142,7 +137,7 @@ pub(crate) fn add_video_cache(
         .expect("Execute failed");
 }
 
-pub(crate) fn delete_video_cache(connection: &Connection, path: &String) -> () {
+pub(crate) fn delete_video_cache(connection: &Connection, path: &String) {
     connection
         .prepare("DELETE FROM VIDEO_CACHE WHERE path = @path")
         .expect("Query Failed")
@@ -162,7 +157,7 @@ pub(crate) fn get_video_cache_items(
             VideoCacheItem::new(row.get("size")?, row.get("id")?),
         ))
     })?;
-    Ok(rows.collect::<Result<HashMap<_, _>, _>>()?)
+    rows.collect::<Result<HashMap<_, _>, _>>()
 }
 
 pub(crate) fn update_name(c: &Connection, i: &String, n: &String) -> Option<()> {
@@ -207,5 +202,5 @@ pub(crate) fn get_cache_items_with_path(
         },
         |row| row.get("path"),
     )?;
-    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    rows.collect::<Result<Vec<_>, _>>()
 }

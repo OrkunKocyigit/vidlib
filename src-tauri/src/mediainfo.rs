@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Error;
-use rsmpeg::avcodec::{AVCodecContext, AVCodecRef};
+use rsmpeg::avcodec::{AVCodecContext, AVCodecParametersRef, AVCodecRef};
 use rsmpeg::avutil::av_q2d;
 use rsmpeg::ffi::{
     av_get_bits_per_sample, AVMediaType_AVMEDIA_TYPE_AUDIO, AVMediaType_AVMEDIA_TYPE_VIDEO,
@@ -128,13 +128,7 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
             if params.bit_rate > 0 {
                 builder.bitrate(Some(format!("{} kb/s", params.bit_rate / 1000)));
             } else {
-                let mut codec_context = AVCodecContext::new(&codec);
-                if codec_context.apply_codecpar(&params).is_ok()
-                    && codec_context.open(None).is_ok()
-                    && codec_context.rc_max_rate > 0
-                {
-                    builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
-                }
+                calculate_bit_rate(&mut builder, &codec, &params);
             }
             let fps = av_q2d(video_stream.avg_frame_rate);
             if fps > 0.0 {
@@ -171,18 +165,26 @@ fn create_media_info<P: AsRef<Path>>(video_path: P) -> Result<VideoMediaInfo, Er
             if bit_rate > 0 {
                 builder.abitrate(Some(format!("{} kb/s", bit_rate / 1000)));
             } else {
-                let mut codec_context = AVCodecContext::new(&codec);
-                if codec_context.apply_codecpar(&params).is_ok()
-                    && codec_context.open(None).is_ok()
-                    && codec_context.rc_max_rate > 0
-                {
-                    builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
-                }
+                calculate_bit_rate(&mut builder, &codec, &params);
             }
             debug!("Audio info creation done");
         }
     }
     Ok(builder.build()?)
+}
+
+fn calculate_bit_rate(
+    builder: &mut VideoMediaInfoBuilder,
+    codec: &AVCodecRef,
+    params: &AVCodecParametersRef,
+) {
+    let mut codec_context = AVCodecContext::new(codec);
+    if codec_context.apply_codecpar(params).is_ok()
+        && codec_context.open(None).is_ok()
+        && codec_context.rc_max_rate > 0
+    {
+        builder.bitrate(Some(format!("{} kb/s", codec_context.rc_max_rate / 1000)));
+    }
 }
 
 fn get_codec_name(codec: &AVCodecRef) -> Option<String> {

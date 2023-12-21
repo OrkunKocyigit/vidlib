@@ -10,7 +10,7 @@ use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use serde::Serialize;
@@ -18,9 +18,8 @@ use tauri::{AppHandle, Error, Manager, State};
 
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
-use crate::gui::{wrap_failure, wrap_success};
 use crate::mediainfo::VideoMediaInfoChannelMessage;
-use crate::service::{Response, ResponseType};
+use crate::service::{wrap_failure, wrap_success, Response, ResponseType};
 use crate::state::{AppState, EmitTotalProgress};
 use crate::thumbnail::ThumbnailChannelMessage;
 
@@ -86,8 +85,8 @@ fn get_folders(app: AppHandle, state: State<AppState>) -> Result<Response<Vec<Fo
     );
     cache.commit(db);
     debug!("Get Folders End");
-    if response.is_ok() {
-        Ok(response.unwrap())
+    if let Ok(folder_infos) = response {
+        Ok(folder_infos)
     } else {
         Err(Error::AssetNotFound("error".to_string()))
     }
@@ -181,7 +180,7 @@ fn set_video_rating(
     gui::update_rating(connection, videos, file, rating)
 }
 
-fn emit_folder_watched(app: AppHandle, path: &PathBuf, watched: bool) {
+fn emit_folder_watched(app: AppHandle, path: &Path, watched: bool) {
     if let Some(parent) = path.parent() {
         let mut hasher = DefaultHasher::new();
         parent.hash(&mut hasher);
@@ -287,7 +286,7 @@ fn delete_path(app: AppHandle, state: State<AppState>, path: &str) -> Result<Res
         let mut cache_guard = state.video_cache.lock().unwrap();
         let cache = cache_guard.as_mut().unwrap();
         let response = gui::delete_path(db, cache, &path);
-        if response.result == ResponseType::SUCCESS {
+        if response.result == ResponseType::Success {
             let _ = app.emit_all(
                 "path_deleted",
                 EmitPathDeleted {
