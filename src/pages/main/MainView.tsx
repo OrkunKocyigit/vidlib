@@ -9,6 +9,7 @@ import VideoView from '../video/VideoView';
 import { type VideoFile } from '../../entities/VideoFile';
 import { type IVideoContext, VideoContext } from './entities/VideoContext';
 import { listen } from '@tauri-apps/api/event';
+import { FolderScan } from '../../service/FolderScan';
 
 function MainView(): JSX.Element {
   const [folders, setFolders] = useState<FolderInfo[]>([]);
@@ -18,6 +19,10 @@ function MainView(): JSX.Element {
     video,
     setVideo
   };
+
+  useEffect(() => {
+    void FolderScan().then(console.log);
+  });
 
   useEffect(() => {
     GetFolders()

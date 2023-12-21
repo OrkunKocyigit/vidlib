@@ -11,13 +11,15 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
+use slab_tree::TreeBuilder;
 use tauri::{AppHandle, Error, Manager, State};
 
 use crate::database::{get_videos, load_database};
 use crate::filescan::{FolderInfo, VideoFile};
+use crate::folderscan::Folder;
 use crate::mediainfo::VideoMediaInfoChannelMessage;
 use crate::service::{wrap_failure, wrap_success, Response, ResponseType};
 use crate::state::{AppState, EmitTotalProgress};
@@ -25,6 +27,7 @@ use crate::thumbnail::ThumbnailChannelMessage;
 
 mod database;
 mod filescan;
+mod folderscan;
 mod gui;
 mod mediainfo;
 mod service;
@@ -311,6 +314,18 @@ fn open_path(path: &str, parent: bool) {
     opener::open(path).unwrap();
 }
 
+#[tauri::command]
+async fn folder_scan(state: State<'_, AppState>) -> Result<Response<()>, Error> {
+    state
+        .folder_channel
+        .lock()
+        .await
+        .send(PathBuf::from("C:\\Emulation"))
+        .await
+        .expect("TEST");
+    Ok(wrap_success(()))
+}
+
 #[derive(Clone, Serialize)]
 struct EmitWatched {
     watched: bool,
@@ -333,6 +348,7 @@ fn main() {
     let (thumbnail_output_tx, thumbnail_output_rx) = tokio::sync::mpsc::channel(1);
     let (mediainfo_input_tx, mediainfo_input_rx) = tokio::sync::mpsc::channel(1);
     let (mediainfo_output_tx, mediainfo_output_rx) = tokio::sync::mpsc::channel(1);
+    let (folder_output_tx, folder_output_rx) = tokio::sync::mpsc::channel(20);
 
     tauri::Builder::default()
         .manage(AppState {
@@ -342,6 +358,12 @@ fn main() {
             video_cache: Default::default(),
             thumbnail_channel: tokio::sync::Mutex::new(thumbnail_input_tx),
             mediainfo_channel: tokio::sync::Mutex::new(mediainfo_input_tx),
+            folder_channel: tokio::sync::Mutex::new(folder_output_tx),
+            folders: Mutex::new(Some(
+                TreeBuilder::new()
+                    .with_root(Folder::new("/".into()))
+                    .build(),
+            )),
         })
         .plugin(
             tauri_plugin_log::Builder::default()
@@ -363,7 +385,8 @@ fn main() {
             get_media_info,
             set_video_notes,
             delete_path,
-            open_path
+            open_path,
+            folder_scan
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -443,6 +466,21 @@ fn main() {
                         Ok(_) => Ok(()),
                         Err(e) => {
                             error!("Mediainfo input channels failed {}", e.to_string());
+                            Err(e)
+                        }
+                    }
+                });
+            }
+            // Folder input async task
+            {
+                let handle = Arc::clone(&handle);
+                tauri::async_runtime::spawn(async move {
+                    match folderscan::process_folder_output_channels(&handle, folder_output_rx)
+                        .await
+                    {
+                        Ok(_) => Ok(()),
+                        Err(e) => {
+                            error!("Folder input channels failed {}", e.to_string());
                             Err(e)
                         }
                     }

@@ -26,7 +26,8 @@ derive_builder = "0.12"
 log = "0.4"
 rsmpeg = { version = "0.14", features = ["ffmpeg6"] }
 natord = "1"
-tokio = { version = "1.33", default-features = false, features = ["sync"] }
+tokio = { version = "1.35", default-features = false, features = ["sync"] }
+slab_tree = "0.3"
 
 [dependencies.xxhash-rust]
 version = "0.8"
@@ -34,7 +35,7 @@ features = ["xxh3"]
 
 [package.metadata.vcpkg]
 git = "https://github.com/microsoft/vcpkg"
-rev = "e57b216"
+rev = "4874bea"
 
 [package.metadata.vcpkg.target]
 x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md", dependencies = ["ffmpeg[zlib,dav1d]"] }

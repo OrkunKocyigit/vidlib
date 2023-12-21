@@ -4,7 +4,9 @@ use std::sync::Mutex;
 
 use rusqlite::Connection;
 use serde::Serialize;
+use slab_tree::Tree;
 
+use crate::folderscan::Folder;
 use crate::mediainfo::VideoMediaInfoChannelMessage;
 use crate::thumbnail::ThumbnailChannelMessage;
 use crate::video::VideoEntry;
@@ -78,6 +80,8 @@ pub struct AppState {
     pub thumbnail_channel: tokio::sync::Mutex<tokio::sync::mpsc::Sender<ThumbnailChannelMessage>>,
     pub mediainfo_channel:
         tokio::sync::Mutex<tokio::sync::mpsc::Sender<VideoMediaInfoChannelMessage>>,
+    pub folder_channel: tokio::sync::Mutex<tokio::sync::mpsc::Sender<PathBuf>>,
+    pub folders: Mutex<Option<Tree<Folder>>>,
 }
 
 pub fn get_video_cache(connection: &Connection) -> VideoCache {
