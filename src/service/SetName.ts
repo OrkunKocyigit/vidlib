@@ -11,6 +11,6 @@ export async function SetName(video: VideoFile, newName: string): Promise<Servic
     if (error !== null) {
       throw new Error(error);
     }
-    return new ServiceResponse(result, response as string);
+    return new ServiceResponse(result, response);
   });
 }

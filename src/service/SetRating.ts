@@ -14,6 +14,6 @@ export async function SetRating(
     if (error !== null) {
       throw new Error(error);
     }
-    return new ServiceResponse(result, response as number);
+    return new ServiceResponse(result, response);
   });
 }

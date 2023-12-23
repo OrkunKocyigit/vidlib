@@ -11,6 +11,6 @@ export async function SetNotes(video: VideoFile, notes: string): Promise<Service
     if (error !== null) {
       throw new Error(error);
     }
-    return new ServiceResponse(result, response as string);
+    return new ServiceResponse(result, response);
   });
 }

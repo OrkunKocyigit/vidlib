@@ -24,7 +24,10 @@ function AddFolderWizard(props: AddFolderWizardProps): JSX.Element {
     setName('');
     AddFolder(path)
       .then((value) => {
-        props.onFolderAdd(value.response as FolderInfo);
+        const folder = value.response;
+        if (folder != null) {
+          props.onFolderAdd(folder);
+        }
       })
       .catch((error) => {
         console.error(error);

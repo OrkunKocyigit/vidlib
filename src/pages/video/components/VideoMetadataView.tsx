@@ -65,9 +65,7 @@ function VideoMetadataView(props: VideoMediaInfoProps): JSX.Element {
                       {t(key)}
                     </Text>
                   </Grid.Col>
-                  <Grid.Col span={{ sm: 5 }}>
-                    {metadata[key] != null ? metadata[key] : t('none')}
-                  </Grid.Col>
+                  <Grid.Col span={{ sm: 5 }}>{metadata[key] ?? t('none')}</Grid.Col>
                 </Grid>
               </Paper>
             </Grid.Col>

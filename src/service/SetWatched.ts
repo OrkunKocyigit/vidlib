@@ -14,6 +14,6 @@ export async function SetWatched(
     if (error !== null) {
       throw new Error(error);
     }
-    return new ServiceResponse(result, response as boolean);
+    return new ServiceResponse(result, response);
   });
 }

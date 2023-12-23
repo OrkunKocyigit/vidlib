@@ -14,8 +14,9 @@ function FolderInput(props: FolderInputProps): JSX.Element {
   const selectFolder = (): void => {
     SelectFolder()
       .then((value) => {
-        setText(value.response as string);
-        props.onSelect(value.response as string);
+        const str = value.response ?? '';
+        setText(str);
+        props.onSelect(str);
       })
       .catch((error) => {
         console.error(error);
