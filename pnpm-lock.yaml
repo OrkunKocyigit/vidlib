@@ -17,12 +17,15 @@ dependencies:
   '@tauri-apps/api':
     specifier: ^1.5.3
     version: 1.5.3
+  clsx:
+    specifier: ^2.0.0
+    version: 2.0.0
   i18next:
     specifier: ^23.7.11
     version: 23.7.11
   mantine-contextmenu:
-    specifier: 7.0.0-alpha.1
-    version: 7.0.0-alpha.1(@mantine/core@7.3.2)(@mantine/hooks@7.3.2)
+    specifier: 7.3.3
+    version: 7.3.3(@mantine/core@7.3.2)(@mantine/hooks@7.3.2)(clsx@2.0.0)(react@18.2.0)
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -2707,14 +2710,18 @@ packages:
       yallist: 4.0.0
     dev: true
 
-  /mantine-contextmenu@7.0.0-alpha.1(@mantine/core@7.3.2)(@mantine/hooks@7.3.2):
-    resolution: {integrity: sha512-3qGgFCnOAZY9PMTM5ChGgjWk0k3aphJSuUNv7FeVqIeej44rcGs8Iz5A7EmLfdU/05pMJe9jhXAUI24v4/wWdg==}
+  /mantine-contextmenu@7.3.3(@mantine/core@7.3.2)(@mantine/hooks@7.3.2)(clsx@2.0.0)(react@18.2.0):
+    resolution: {integrity: sha512-Sfj53bYTBT5dHeNPBzlLLB1yemxXXMoZn/xkys0jzXorKf8NuRiAV2SLtP9wizrZ8T4AYSZaGLfDyBnKbXiSrg==}
     peerDependencies:
       '@mantine/core': '>=7'
       '@mantine/hooks': '>=7'
+      clsx: '>=2'
+      react: '>=18.2'
     dependencies:
       '@mantine/core': 7.3.2(@mantine/hooks@7.3.2)(@types/react@18.2.45)(react-dom@18.2.0)(react@18.2.0)
       '@mantine/hooks': 7.3.2(react@18.2.0)
+      clsx: 2.0.0
+      react: 18.2.0
     dev: false
 
   /merge-stream@2.0.0:

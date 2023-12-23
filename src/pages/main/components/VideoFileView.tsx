@@ -16,7 +16,7 @@ export interface VideoFileViewProps extends React.ComponentPropsWithoutRef<'div'
 function VideoFileView(props: VideoFileViewProps): JSX.Element {
   const videoContext = useContext<IVideoContext>(VideoContext);
   const { t } = useTranslation();
-  const showContextMenu = useContextMenu();
+  const { showContextMenu } = useContextMenu();
 
   useEffect(() => {
     const unlisten = listen(
@@ -63,10 +63,10 @@ function VideoFileView(props: VideoFileViewProps): JSX.Element {
           props.video.watched && props.video.selected(videoContext.video?.id)
             ? classes.controlSelectedWatched
             : props.video.watched
-            ? classes.controlWatched
-            : props.video.selected(videoContext.video?.id)
-            ? classes.controlSelected
-            : classes.control
+              ? classes.controlWatched
+              : props.video.selected(videoContext.video?.id)
+                ? classes.controlSelected
+                : classes.control
         }>
         <Group justify="space-between" gap={0}>
           <Flex align="center">

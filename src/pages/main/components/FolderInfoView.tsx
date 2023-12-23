@@ -21,13 +21,12 @@ import {
 } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
 import styled from 'styled-components';
-import { useContextMenu } from 'mantine-contextmenu';
+import { type ContextMenuItemOptions, useContextMenu } from 'mantine-contextmenu';
 import { useTranslation } from 'react-i18next';
 import { DeletePath } from '../../../service/DeletePath';
 import { OpenPath } from '../../../service/OpenPath';
 import { listen } from '@tauri-apps/api/event';
 import classes from './FolderInfoView.module.pcss';
-import { type ContextMenuItemOptions } from 'mantine-contextmenu/dist/types/types';
 
 export interface FolderInfoProps {
   folder: FolderInfo;
@@ -68,7 +67,7 @@ function renderFolderIcon(folder: FolderInfo, state: boolean): JSX.Element | nul
 function FolderInfoView(props: FolderInfoProps): JSX.Element | null {
   const { folder, showDelete } = useProps('FolderInfo', defaultProps, props);
   const [opened, { toggle }] = useDisclosure(false);
-  const showContextMenu = useContextMenu();
+  const { showContextMenu } = useContextMenu();
   const { t } = useTranslation();
   const [watched, setWatched] = useState(folder.watched);
 
